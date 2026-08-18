@@ -1,0 +1,133 @@
+specVersion: 1.0.0
+description: GemFot — fair-launch memecoins and DEX trading on Liteforge
+repository: https://github.com/devEMEL/gemfot
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: GemFotManager
+    network: liteforge
+    source:
+      address: "0xB88770C9FE4C733EFb9dd259fc32F00979706fdC"
+      abi: GemFotManager
+      startBlock: 41490740
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/gemfotManager.ts
+      entities:
+        - Protocol
+        - Creator
+        - Launch
+        - Swap
+        - Pool
+        - PoolManager
+        - Token
+        - UniswapDayData
+        - PoolDayData
+        - PoolHourData
+        - TokenDayData
+        - TokenHourData
+        - Transaction
+      abis:
+        - name: GemFotManager
+          file: ./abis/GemFotManager.json
+        - name: Launch
+          file: ./abis/Launch.json
+        - name: Memecoin
+          file: ./abis/Memecoin.json
+      eventHandlers:
+        - event: PoolCreated(indexed bytes32,address,address,uint256,bool,uint256,(string,string,string,uint256,uint256,uint256,address,uint24,uint256,uint256,uint256,uint8))
+          handler: handlePoolCreated
+        - event: PoolScheduled(indexed bytes32,uint256)
+          handler: handlePoolScheduled
+        - event: PoolPremine(indexed bytes32,int256)
+          handler: handlePoolPremine
+        - event: PremineBurned(indexed bytes32,uint256)
+          handler: handlePremineBurned
+        - event: PoolSwap(indexed bytes32,int256,int256,int256,int256,int256,int256,int256,int256,int256,int256,int256,int256)
+          handler: handlePoolSwap
+        - event: PoolStateUpdated(indexed bytes32,uint160,int24,uint24,uint24,uint128)
+          handler: handlePoolStateUpdated
+
+  - kind: ethereum/contract
+    name: FairLaunch
+    network: liteforge
+    source:
+      address: "0xC73c72Bff8135C01611473F8aC0318CD1cEd0266"
+      abi: FairLaunch
+      startBlock: 41490740
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/fairLaunch.ts
+      entities:
+        - Launch
+        - FairLaunchBuy
+      abis:
+        - name: FairLaunch
+          file: ./abis/FairLaunch.json
+      eventHandlers:
+        - event: FairLaunchCreated(indexed bytes32,uint256,uint256,uint256)
+          handler: handleFairLaunchCreated
+        - event: FairLaunchBought(indexed bytes32,uint256,uint256,uint256)
+          handler: handleFairLaunchBought
+        - event: FairLaunchEnded(indexed bytes32,uint256,uint256,uint256,uint256)
+          handler: handleFairLaunchEnded
+
+  - kind: ethereum/contract
+    name: PoolManager
+    network: liteforge
+    source:
+      address: "0xF351A424955ba04e3d49dDa6E549a5983dB264B9"
+      abi: PoolManager
+      startBlock: 41490740
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/poolManager.mapping.ts
+      entities:
+        - Pool
+        - Token
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+        - name: PoolManager
+          file: ./abis/PoolManager.json
+      eventHandlers:
+        - event: Initialize(indexed bytes32,indexed address,indexed address,uint24,int24,address,uint160,int24)
+          handler: handleInitialize
+        - event: ModifyLiquidity(indexed bytes32,indexed address,int24,int24,int256,bytes32)
+          handler: handleModifyLiquidity
+
+  - kind: ethereum/contract
+    name: PositionManager
+    network: liteforge
+    source:
+      address: "0xf08E1E3EFF9d79F545E14179396004Ba92dA25B5"
+      abi: PositionManager
+      startBlock: 41490740
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/positionManager.mapping.ts
+      entities:
+        - Position
+      abis:
+        - name: PositionManager
+          file: ./abis/PositionManager.json
+      eventHandlers:
+        - event: Subscription(indexed uint256,indexed address)
+          handler: handleSubscription
+        - event: Unsubscription(indexed uint256,indexed address)
+          handler: handleUnsubscription
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer

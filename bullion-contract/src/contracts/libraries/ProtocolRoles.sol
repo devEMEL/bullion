@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
+
+/**
+ * Holds definitions for known `AccessControl` roles.
+ */
+library ProtocolRoles {
+    bytes32 public constant LAUNCH = keccak256("Launch");
+    bytes32 public constant NOTIFIER = keccak256("Notifier");
+    bytes32 public constant GEMFOT_MANAGER = keccak256("GemFotManager");
+}

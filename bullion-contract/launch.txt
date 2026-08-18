@@ -1,0 +1,1 @@
+import {BaseHook} from '@uniswap-periphery/base/hooks/BaseHook.sol';

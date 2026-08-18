@@ -1,0 +1,4 @@
+git commit --no-verify -m "fix: remove negative multiplier from token amounts in swap mappings"
+
+
+goldsky subgraph deploy bullion-subgraph/1.0.0 --path .
