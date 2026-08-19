@@ -123,12 +123,14 @@ export function handlePoolStateUpdated(event: PoolStateUpdated): void {
 // we dont need handleHookSwap, we will do everything in handlePoolSwap as it contains all the info.
 
 
-export function handlePoolSwap(
+export function handlePoolSwap(event: PoolSwap): void {
+  handlePoolSwapHelper(event)
+}
+
+export function handlePoolSwapHelper(
   event: PoolSwap,
   subgraphConfig: SubgraphConfig = getSubgraphConfig()
 ): void {
-
-
   const poolManagerAddress = subgraphConfig.poolManagerAddress
   const wrappedNativeAddress = subgraphConfig.wrappedNativeAddress
   const stablecoinAddresses = subgraphConfig.stablecoinAddresses
@@ -223,10 +225,9 @@ export function handlePoolSwap(
   let swap = new Swap(transaction.id.toString() + '-' + event.logIndex.toString());
   if (launch != null) {
     swap.launch = launch.id;
-    if (launch.pool != null) {
-      swap.pool = pool.id;
-    }
   }
+  // Always attach to the current pool so Pool.swaps derived relation is reliable.
+  swap.pool = pool.id;
   swap.token0 = pool.token0
   swap.token1 = pool.token1
   swap.transaction = transaction.id
@@ -248,8 +249,12 @@ export function handlePoolSwap(
   swap.amount1 = amount1;
   swap.fee0 = fee0;
   swap.fee1 = fee1;
+  // Persist price/tick snapshots for analytics charting.
+  swap.sqrtPriceX96 = pool.sqrtPrice;
+  swap.tick = pool.tick;
 
   swap.timestamp = event.block.timestamp;
+  swap.logIndex = event.logIndex;
   swap.save();
 
 

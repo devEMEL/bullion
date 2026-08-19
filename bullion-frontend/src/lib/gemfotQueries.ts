@@ -186,18 +186,18 @@ export const GET_POOL_DETAIL = /* GraphQL */ `
         low
         close
       }
-    }
-    swaps(first: 100, where: { pool: $id }, orderBy: timestamp, orderDirection: desc) {
-      id
-      timestamp
-      origin
-      amount0
-      amount1
-      fee0
-      fee1
-      sqrtPriceX96
-      transaction {
+      swaps(first: 100, orderBy: timestamp, orderDirection: desc) {
         id
+        timestamp
+        origin
+        amount0
+        amount1
+        fee0
+        fee1
+        sqrtPriceX96
+        transaction {
+          id
+        }
       }
     }
   }

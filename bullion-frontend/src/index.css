@@ -4,11 +4,14 @@
 
 @theme {
   --font-sans: "GemFot Sans", "Raleway", ui-sans-serif, sans-serif;
-  --font-mono: "Ubuntu", ui-sans-serif, sans-serif;
+  --font-mono: "Montserrat", ui-sans-serif, sans-serif;
   --font-display: "bbTorsoPro", "Raleway", ui-sans-serif, sans-serif;
   --font-raleway: "Raleway", ui-sans-serif, sans-serif;
   --font-ubuntu: "Ubuntu", ui-sans-serif, sans-serif;
-  --font-num: "Ubuntu", ui-sans-serif, sans-serif;
+  --font-num: "Montserrat", ui-sans-serif, sans-serif;
+  --font-montserrat: "Montserrat", ui-sans-serif, sans-serif;
+
+  
 
   --color-pink-500: #5865F2;
   --color-pink-600: #4752C4;
@@ -62,13 +65,13 @@
   --shadow-card-hover: 0 10px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(85, 85, 255, 0.15);
 }
 
-/* Digits & numeric punctuation → Ubuntu; everything else → Raleway */
+/* Digits & numeric punctuation → Montserrat; everything else → Raleway */
 @font-face {
   font-family: "GemFot Sans";
   font-style: normal;
-  font-weight: 300 700;
+  font-weight: 300 900;
   font-display: swap;
-  src: local("Ubuntu Light"), local("Ubuntu");
+  src: local("Montserrat");
   unicode-range:
     U+0024, U+0025, U+002B, U+002C, U+002D, U+002E, U+0030-0039, U+003A, U+00D7, U+2212;
 }
@@ -128,9 +131,10 @@ h1, h2, h3, h4, h5, h6 {
 
 @layer utilities {
   .font-ubuntu,
+  .font-montserrat,
   .num,
   .tabular-nums {
-    font-family: "Ubuntu", ui-sans-serif, sans-serif;
+    font-family: "Montserrat", ui-sans-serif, sans-serif;
     font-variant-numeric: tabular-nums;
   }
 

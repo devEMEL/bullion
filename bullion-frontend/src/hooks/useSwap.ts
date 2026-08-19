@@ -20,7 +20,7 @@ export interface PoolKeyStruct {
 
 export type SwapStep = 'idle' | 'approving' | 'signing' | 'confirming' | 'done' | 'error';
 
-export function useSwap(memecoin?: string) {
+export function useSwap(memecoin?: string, isGraduated?: boolean) {
   const { address } = useAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
@@ -95,7 +95,7 @@ export function useSwap(memecoin?: string) {
           // Fallback to default gas settings if estimation fails
         }
 
-        if (direction === 'buy') {
+        if (direction === 'buy' && !isGraduated) {
           /* ------------------------------------------------- buyFairLaunch -- */
           // Calculate 1% fee buffer for totalToPay approval
           const approvalAmount = (amountIn * 101n) / 100n;
@@ -121,6 +121,14 @@ export function useSwap(memecoin?: string) {
           }
 
           setStep('signing');
+          // Validate the transaction before asking the wallet to broadcast it.
+          await publicClient.simulateContract({
+            address: CONTRACTS.gemfotManager,
+            abi: gemfotManagerAbiArray,
+            functionName: 'buyFairLaunch',
+            args: [poolKey, amountIn],
+            account: address,
+          });
           const hash = await walletClient.writeContract({
             address: CONTRACTS.gemfotManager,
             abi: gemfotManagerAbiArray,
@@ -138,7 +146,7 @@ export function useSwap(memecoin?: string) {
           setStep('done');
           return hash;
         } else {
-          /* ------------------------------------------------- sell (PoolSwap) -- */
+          /* ------------------------------------------------- poolSwap (DEX) -- */
           const allowance = (await publicClient.readContract({
             address: tokenIn,
             abi: erc20AbiArray,
@@ -160,6 +168,21 @@ export function useSwap(memecoin?: string) {
           }
 
           setStep('signing');
+          // Validate the transaction before asking the wallet to broadcast it.
+          await publicClient.simulateContract({
+            address: CONTRACTS.poolSwap,
+            abi: (PoolSwapAbi as any).abi || PoolSwapAbi,
+            functionName: 'swap',
+            args: [
+              poolKey,
+              {
+                zeroForOne,
+                amountSpecified: -amountIn,
+                sqrtPriceLimitX96: zeroForOne ? MIN_SQRT_PRICE : MAX_SQRT_PRICE,
+              },
+            ],
+            account: address,
+          });
           const hash = await walletClient.writeContract({
             address: CONTRACTS.poolSwap,
             abi: (PoolSwapAbi as any).abi || PoolSwapAbi,
@@ -196,7 +219,7 @@ export function useSwap(memecoin?: string) {
         return null;
       }
     },
-    [walletClient, publicClient, address, memecoin]
+    [walletClient, publicClient, address, memecoin, isGraduated]
   );
 
   return {

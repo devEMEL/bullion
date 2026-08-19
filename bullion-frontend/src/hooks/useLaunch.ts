@@ -20,6 +20,7 @@ export interface LaunchDetail extends SubgraphLaunch {
   poolInitialized?: boolean;
   isGraduated: boolean;
   buys: LaunchBuy[];
+  swaps?: any[];
 }
 
 const GET_LAUNCH_BY_TOKEN = /* GraphQL */ `
@@ -60,6 +61,18 @@ const GET_LAUNCH_BY_TOKEN = /* GraphQL */ `
         totalSold
         timestamp
         transactionHash
+      }
+      swaps(first: 100, orderBy: timestamp, orderDirection: desc) {
+        id
+        timestamp
+        amount0
+        amount1
+        fee0
+        fee1
+        sqrtPriceX96
+        transaction {
+          id
+        }
       }
     }
   }
@@ -105,6 +118,7 @@ export function useLaunch(memecoin?: string, pollMs = 12_000) {
           poolInitialized,
           isGraduated: poolInitialized,
           buys: raw.buys ?? [],
+          swaps: raw.swaps ?? [],
         });
         setError(null);
       } catch (e: any) {

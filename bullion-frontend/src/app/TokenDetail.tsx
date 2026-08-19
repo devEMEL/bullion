@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useAccount, useReadContract } from 'wagmi';
+import { useAccount, usePublicClient, useReadContract } from 'wagmi';
 import { formatUnits, parseUnits } from 'viem';
 import {
   ArrowLeft,
@@ -16,7 +16,9 @@ import {
 import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts';
 import { useLaunch } from '@/hooks/useLaunch';
 import { useSwap } from '@/hooks/useSwap';
+import { useSwapQuote } from '@/hooks/swap/useSwapQuote';
 import { CONTRACTS, explorerTx } from '@/config/networks';
+import type { TokenConfig } from '@/config/tokens';
 import { calcExpectedRaise, countdown, fmtNative, fmtToken, progressPct, shortAddress, timeAgo } from '@/lib/format';
 import { quoteFairLaunchBuy } from '@/lib/fairLaunchQuote';
 import { gemfotQuery, GET_POOL_DETAIL } from '@/lib/gemfotQueries';
@@ -209,7 +211,87 @@ function TradeWidget({
   const [amount, setAmount] = useState('');
   const [slippage, setSlippage] = useState('0.50%');
 
-  const { swap, step, error: swapError, txHash, isBusy } = useSwap(tokenAddress);
+  // DEX swap quote state (used when `launch` is already graduated)
+  const [dexPool, setDexPool] = useState<any>(null);
+  const [dexPoolFetchError, setDexPoolFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!launch.isGraduated || !launch.poolId) return;
+      setDexPoolFetchError(null);
+      setDexPool(null);
+      try {
+        const data = await gemfotQuery<{ pool: any }>(GET_POOL_DETAIL, {
+          id: String(launch.poolId).toLowerCase(),
+        });
+        if (!cancelled) setDexPool(data.pool);
+      } catch (e: any) {
+        if (!cancelled) setDexPoolFetchError(e?.message ?? 'Failed to fetch pool');
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [launch.isGraduated, launch.poolId]);
+
+  const nativeAddr = CONTRACTS.nativeToken.toLowerCase();
+  const memAddr = tokenAddress.toLowerCase();
+
+  const poolNativeDecimals =
+    dexPool?.token0?.id?.toLowerCase() === nativeAddr
+      ? Number(dexPool.token0.decimals)
+      : dexPool?.token1?.id?.toLowerCase() === nativeAddr
+        ? Number(dexPool.token1.decimals)
+        : CONTRACTS.nativeTokenDecimals;
+
+  const poolMemDecimals =
+    dexPool?.token0?.id?.toLowerCase() === memAddr
+      ? Number(dexPool.token0.decimals)
+      : dexPool?.token1?.id?.toLowerCase() === memAddr
+        ? Number(dexPool.token1.decimals)
+        : 18;
+
+  const nativeTokenConfig: TokenConfig = {
+    address: CONTRACTS.nativeToken,
+    name: CONTRACTS.nativeTokenSymbol,
+    symbol: CONTRACTS.nativeTokenSymbol,
+    decimals: poolNativeDecimals,
+    logo: '',
+  };
+
+  const memTokenConfig: TokenConfig = {
+    address: tokenAddress as `0x${string}`,
+    name: launch.name ?? launch.symbol,
+    symbol: launch.symbol,
+    decimals: poolMemDecimals,
+    logo: '',
+  };
+
+  const quoteToken0 = side === 'buy' ? nativeTokenConfig : memTokenConfig;
+  const quoteToken1 = side === 'buy' ? memTokenConfig : nativeTokenConfig;
+
+  const {
+    outputAmount: dexOutputAmount,
+    error: dexQuoteError,
+    onInputChange: dexOnInputChange,
+  } = useSwapQuote({
+    token0: quoteToken0,
+    token1: quoteToken1,
+    poolFee: dexPool ? parseInt(dexPool.feeTier) : 3000,
+    tickSpacing: dexPool ? parseInt(dexPool.tickSpacing) : 60,
+    hooksAddress: (dexPool?.hooks ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
+    sqrtPriceX96: dexPool?.sqrtPrice ?? '0',
+  });
+
+  useEffect(() => {
+    if (!launch.isGraduated || !dexPool) return;
+    // Keep quote output in sync with the amount the user is typing.
+    dexOnInputChange(amount);
+  }, [amount, side, launch.isGraduated, dexPool, dexOnInputChange]);
+
+  const { swap, step, error: swapError, txHash, isBusy } = useSwap(tokenAddress, launch.isGraduated);
 
   const { data: nativeBalance } = useReadContract({
     address: CONTRACTS.nativeToken,
@@ -280,15 +362,6 @@ function TradeWidget({
         </button>
       </div>
 
-      {/* Currency indicator (Buying with BZKLTC) */}
-      {side === 'buy' && (
-        <div className="flex items-center justify-center mb-5">
-          <span className="px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-[13px] font-extrabold flex items-center gap-1.5">
-            Pay with {CONTRACTS.nativeTokenSymbol}
-          </span>
-        </div>
-      )}
-
       {/* Main Input Display */}
       <div className="text-center mb-5">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/40 mb-2">
@@ -306,13 +379,17 @@ function TradeWidget({
       {/* Preset Amount Pills */}
       {side === 'buy' ? (
         <div className="flex items-center justify-center gap-2 mb-5">
-          {['0.001', '0.01', '0.1', '1'].map((val) => (
+          {['10%', '25%', '50%', '100%'].map((pctStr) => (
             <button
-              key={val}
-              onClick={() => setAmount(val)}
+              key={pctStr}
+              onClick={() => {
+                const pctVal = Number(pctStr.replace('%', ''));
+                const calcAmt = (currentBalNum * pctVal) / 100;
+                setAmount(calcAmt ? String(calcAmt) : '');
+              }}
               className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 text-[13px] font-bold transition-all cursor-pointer"
             >
-              {val}
+              {pctStr}
             </button>
           ))}
         </div>
@@ -358,6 +435,29 @@ function TradeWidget({
             {launch.symbol}
           </span>
         </div>
+      )}
+
+      {/* Estimated Receive output during DEX swap */}
+      {launch.isGraduated && amount && Number(amount) > 0 && dexPool && dexOutputAmount && !dexQuoteError && (
+        <div className="mb-4 px-4 py-2.5 bg-[rgba(88,101,242,0.12)] border border-[rgba(88,101,242,0.25)] rounded-2xl flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-white/50">Estimated receive</span>
+          <span className="text-[13px] font-extrabold text-[#5865F2] tabular-nums">
+            ≈ {dexOutputAmount}{' '}
+            {side === 'buy' ? launch.symbol : CONTRACTS.nativeTokenSymbol}
+          </span>
+        </div>
+      )}
+
+      {dexQuoteError && launch.isGraduated && amount && Number(amount) > 0 && (
+        <p className="mb-4 text-[12px] text-red-400 text-center break-words leading-relaxed">
+          {dexQuoteError}
+        </p>
+      )}
+
+      {dexPoolFetchError && launch.isGraduated && (
+        <p className="mb-4 text-[12px] text-red-400 text-center break-words leading-relaxed">
+          {dexPoolFetchError}
+        </p>
       )}
 
       {/* Balance Row */}
@@ -465,11 +565,11 @@ function DexPoolAnalytics({
     const fetchPoolDetail = async () => {
       try {
         setLoading(true);
-        const data = await gemfotQuery<{ pool: any; swaps: any[] }>(GET_POOL_DETAIL, {
+        const data = await gemfotQuery<{ pool: any }>(GET_POOL_DETAIL, {
           id: poolId.toLowerCase(),
         });
         setPool(data.pool);
-        setSwaps(data.swaps || []);
+        setSwaps(data.pool?.swaps?.length ? data.pool.swaps : launch.swaps || []);
       } catch (err) {
         console.error('Error fetching pool details:', err);
       } finally {
@@ -477,7 +577,7 @@ function DexPoolAnalytics({
       }
     };
     fetchPoolDetail();
-  }, [poolId]);
+  }, [poolId, launch.swaps]);
 
   const reversedSwaps = useMemo(() => [...swaps].reverse(), [swaps]);
   const pointsData = useMemo(() => {
@@ -516,11 +616,11 @@ function DexPoolAnalytics({
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: 'rgba(255, 255, 255, 0.4)',
-        fontFamily: 'Inter, sans-serif',
+        fontFamily: 'Outfit, sans-serif',
       },
       grid: {
-        vertLines: { color: 'rgba(255, 255, 255, 0.04)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.04)' },
+        vertLines: { color: 'rgba(255, 255, 255, 0.02)' },
+        horzLines: { color: 'rgba(255, 255, 255, 0.02)' },
       },
       rightPriceScale: {
         borderVisible: false,
@@ -533,13 +633,13 @@ function DexPoolAnalytics({
       },
       crosshair: {
         vertLine: {
-          color: 'rgba(88,101,242,0.4)',
+          color: 'rgba(255,255,255,0.15)',
           width: 1,
           style: 3,
           labelVisible: false,
         },
         horzLine: {
-          color: 'rgba(88,101,242,0.4)',
+          color: 'rgba(255,255,255,0.15)',
           width: 1,
           style: 3,
           labelVisible: false,
@@ -548,7 +648,7 @@ function DexPoolAnalytics({
       handleScale: false,
       handleScroll: false,
       width: container.clientWidth || 500,
-      height: container.clientHeight || 280,
+      height: container.clientHeight || 160,
     });
 
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
@@ -692,10 +792,10 @@ function DexPoolAnalytics({
             </div>
           </div>
 
-          <div className="relative flex-1 min-h-[260px] flex items-end mt-4">
+          <div className="relative flex-1 min-h-[160px] flex items-end mt-4">
             {swaps.length === 0 ? (
               <div className="absolute inset-0 flex items-center justify-center text-white/30 text-[13px] font-semibold">
-                No DEX swap history recorded yet
+                No swap history available
               </div>
             ) : (
               <div ref={chartContainerRef} className="w-full h-full" />
