@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { useAccount, useReadContract, useWriteContract, usePublicClient } from 'wagmi';
+import { useAccount, useBalance, useReadContract, useWriteContract, useSendTransaction, usePublicClient } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
-import { Send, Wallet, Loader2, ArrowRight, Check, AlertCircle, Coins, RefreshCw } from 'lucide-react';
+import { Send, Wallet, Loader2, ArrowRight, Check, AlertCircle, Coins, RefreshCw, Zap } from 'lucide-react';
 import { parseUnits, formatUnits, isAddress } from 'viem';
 import { CONTRACTS } from '@/config/networks';
 import ERC20_ABI from '@/abi/ERC20.json';
@@ -13,19 +13,27 @@ export default function TokenTransferPage() {
   const { address, isConnected } = useAccount();
   const { open } = useAppKit();
   const { writeContractAsync } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
   const publicClient = usePublicClient();
 
-  // Selection mode: 'native' (BZKLTC) or 'custom' (ERC20 address)
-  const [tokenType, setTokenType] = useState<'native' | 'custom'>('native');
+  // Selection mode: 'chain_native' (ZKLTC on LitVM), 'protocol_native' (BZKLTC), or 'custom' (ERC20 address)
+  const [tokenType, setTokenType] = useState<'chain_native' | 'protocol_native' | 'custom'>('chain_native');
   const [customTokenAddress, setCustomTokenAddress] = useState('');
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  // Active target token contract address
+  // Read chain native balance (ZKLTC on LitVM)
+  const { data: chainBalanceData, refetch: refetchChainBalance } = useBalance({
+    address: address as `0x${string}` | undefined,
+    query: { enabled: !!address, refetchInterval: 10_000 },
+  });
+
+  // Active target ERC-20 token contract address
   const activeTokenAddress = useMemo(() => {
-    if (tokenType === 'native') return CONTRACTS.nativeToken;
-    return isAddress(customTokenAddress) ? (customTokenAddress as `0x${string}`) : undefined;
+    if (tokenType === 'protocol_native') return CONTRACTS.nativeToken;
+    if (tokenType === 'custom') return isAddress(customTokenAddress) ? (customTokenAddress as `0x${string}`) : undefined;
+    return undefined;
   }, [tokenType, customTokenAddress]);
 
   // Read Custom Token metadata (Symbol & Decimals)
@@ -44,10 +52,19 @@ export default function TokenTransferPage() {
   });
 
   // Effective token symbol & decimals
-  const tokenSymbol = tokenType === 'native' ? (CONTRACTS.nativeTokenSymbol || 'BZKLTC') : ((customSymbol as string) || 'TOKEN');
-  const tokenDecimals = tokenType === 'native' ? (CONTRACTS.nativeTokenDecimals || 18) : ((customDecimals as number) || 18);
+  const tokenSymbol = useMemo(() => {
+    if (tokenType === 'chain_native') return 'ZKLTC';
+    if (tokenType === 'protocol_native') return CONTRACTS.nativeTokenSymbol || 'BZKLTC';
+    return (customSymbol as string) || 'TOKEN';
+  }, [tokenType, customSymbol]);
 
-  // Read user balance for the active token
+  const tokenDecimals = useMemo(() => {
+    if (tokenType === 'chain_native') return 18;
+    if (tokenType === 'protocol_native') return CONTRACTS.nativeTokenDecimals || 18;
+    return (customDecimals as number) || 18;
+  }, [tokenType, customDecimals]);
+
+  // Read user balance for active ERC-20 token
   const { data: balanceRaw, refetch: refetchBalance } = useReadContract({
     address: activeTokenAddress,
     abi: ERC20_ABI.abi,
@@ -56,15 +73,20 @@ export default function TokenTransferPage() {
     query: { enabled: !!address && !!activeTokenAddress, refetchInterval: 10_000 },
   });
 
+  const activeRawBalance = useMemo(() => {
+    if (tokenType === 'chain_native') return chainBalanceData?.value;
+    return balanceRaw as bigint | undefined;
+  }, [tokenType, chainBalanceData, balanceRaw]);
+
   const formattedBalance = useMemo(() => {
-    if (balanceRaw !== undefined) {
-      return Number(formatUnits(balanceRaw as bigint, tokenDecimals)).toLocaleString(undefined, {
+    if (activeRawBalance !== undefined) {
+      return Number(formatUnits(activeRawBalance, tokenDecimals)).toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 6,
       });
     }
     return '0.00';
-  }, [balanceRaw, tokenDecimals]);
+  }, [activeRawBalance, tokenDecimals]);
 
   // Toast notifications state
   const [toast, setToast] = useState<{
@@ -85,8 +107,8 @@ export default function TokenTransferPage() {
 
   // Quick percent amount filler
   const handlePercent = (pct: number) => {
-    if (!balanceRaw) return;
-    const raw = (balanceRaw as bigint) * BigInt(pct) / 100n;
+    if (activeRawBalance === undefined) return;
+    const raw = (activeRawBalance * BigInt(pct)) / 100n;
     setAmount(formatUnits(raw, tokenDecimals));
   };
 
@@ -99,7 +121,7 @@ export default function TokenTransferPage() {
       return;
     }
 
-    if (!activeTokenAddress) {
+    if (tokenType !== 'chain_native' && !activeTokenAddress) {
       showToast('error', 'Invalid Token', 'Please enter a valid ERC-20 token address.');
       return;
     }
@@ -122,7 +144,7 @@ export default function TokenTransferPage() {
       return;
     }
 
-    if (balanceRaw !== undefined && amountParsed > (balanceRaw as bigint)) {
+    if (activeRawBalance !== undefined && amountParsed > activeRawBalance) {
       showToast('error', 'Insufficient Balance', `You do not have enough ${tokenSymbol} to complete this transfer.`);
       return;
     }
@@ -136,7 +158,6 @@ export default function TokenTransferPage() {
         try {
           const feeData = await publicClient.estimateFeesPerGas();
           if (feeData.maxFeePerGas) {
-            // Apply 25% safety buffer so gas price exceeds rapidly fluctuating block baseFee
             const maxFeePerGas = (feeData.maxFeePerGas * 125n) / 100n;
             const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
               ? (feeData.maxPriorityFeePerGas * 125n) / 100n
@@ -148,13 +169,23 @@ export default function TokenTransferPage() {
         }
       }
 
-      const txHash = await writeContractAsync({
-        address: activeTokenAddress,
-        abi: ERC20_ABI.abi,
-        functionName: 'transfer',
-        args: [recipientAddress as `0x${string}`, amountParsed],
-        ...gasFees,
-      });
+      let txHash: `0x${string}`;
+
+      if (tokenType === 'chain_native') {
+        txHash = await sendTransactionAsync({
+          to: recipientAddress as `0x${string}`,
+          value: amountParsed,
+          ...gasFees,
+        });
+      } else {
+        txHash = await writeContractAsync({
+          address: activeTokenAddress!,
+          abi: ERC20_ABI.abi,
+          functionName: 'transfer',
+          args: [recipientAddress as `0x${string}`, amountParsed],
+          ...gasFees,
+        });
+      }
 
       showToast('pending', 'Processing Transaction', 'Waiting for network confirmation...', txHash);
 
@@ -171,7 +202,11 @@ export default function TokenTransferPage() {
 
       setAmount('');
       setRecipientAddress('');
-      refetchBalance();
+      if (tokenType === 'chain_native') {
+        refetchChainBalance();
+      } else {
+        refetchBalance();
+      }
     } catch (err: any) {
       console.error('Transfer error:', err);
       showToast('error', 'Transfer Failed', err?.shortMessage || err?.message || 'Transaction was cancelled or reverted.');
@@ -207,7 +242,7 @@ export default function TokenTransferPage() {
           Token Transfer
         </h1>
         <p className="text-white/45 text-sm md:text-base leading-relaxed">
-          Send native protocol assets or custom ERC-20 tokens directly to any address on Liteforge.
+          Send native chain assets (ZKLTC), protocol tokens (BZKLTC), or custom ERC-20 tokens directly to any address on Liteforge.
         </p>
       </header>
 
@@ -221,33 +256,49 @@ export default function TokenTransferPage() {
             <label className="text-xs uppercase tracking-wider text-white/50 font-semibold mb-2 block">
               Select Asset To Transfer
             </label>
-            <div className="grid grid-cols-2 gap-2 bg-black/40 p-1.5 rounded-xl border border-white/[0.06]">
+            <div className="grid grid-cols-3 gap-2 bg-black/40 p-1.5 rounded-xl border border-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
-                  setTokenType('native');
+                  setTokenType('chain_native');
                   setCustomTokenAddress('');
                 }}
-                className={`py-2.5 px-4 rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-2 ${
-                  tokenType === 'native'
+                className={`py-2.5 px-3 rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                  tokenType === 'chain_native'
                     ? 'bg-primary text-black shadow-lg font-bold'
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Coins size={15} />
-                Native ({CONTRACTS.nativeTokenSymbol || 'BZKLTC'})
+                <Zap size={14} />
+                Native (ZKLTC)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setTokenType('protocol_native');
+                  setCustomTokenAddress('');
+                }}
+                className={`py-2.5 px-3 rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                  tokenType === 'protocol_native'
+                    ? 'bg-primary text-black shadow-lg font-bold'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Coins size={14} />
+                {CONTRACTS.nativeTokenSymbol || 'BZKLTC'}
               </button>
 
               <button
                 type="button"
                 onClick={() => setTokenType('custom')}
-                className={`py-2.5 px-4 rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-2 ${
+                className={`py-2.5 px-3 rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-1.5 ${
                   tokenType === 'custom'
                     ? 'bg-primary text-black shadow-lg font-bold'
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <RefreshCw size={15} />
+                <RefreshCw size={14} />
                 Custom ERC-20
               </button>
             </div>
@@ -290,7 +341,7 @@ export default function TokenTransferPage() {
             {isConnected && (
               <button
                 type="button"
-                onClick={() => refetchBalance()}
+                onClick={() => (tokenType === 'chain_native' ? refetchChainBalance() : refetchBalance())}
                 className="text-xs text-white/40 hover:text-primary transition-colors p-2"
                 title="Refresh balance"
               >
@@ -320,7 +371,7 @@ export default function TokenTransferPage() {
               <label className="text-xs uppercase tracking-wider text-white/50 font-semibold">
                 Amount To Send
               </label>
-              {isConnected && balanceRaw !== undefined && (
+              {isConnected && activeRawBalance !== undefined && (
                 <div className="flex items-center gap-1.5">
                   {[5, 10, 25, 50, 75, 100].map((pct) => (
                     <button

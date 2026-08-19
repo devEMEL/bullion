@@ -40,6 +40,19 @@ export function fmtNative(v?: string | bigint | null, digits = 2): string {
   }
 }
 
+/** Calculates expected raise: (targetMarketCap * (multiple + 1)) / (2 * multiple) */
+export function calcExpectedRaise(targetMarketCap?: string | bigint | null, multiple?: string | number | null, digits = 2): string {
+  try {
+    const mcapNum = Number(formatUnits(BigInt(targetMarketCap ?? 0), CONTRACTS.nativeTokenDecimals));
+    const m = Number(multiple ?? 2);
+    if (mcapNum <= 0 || m <= 0) return '0';
+    const raise = (mcapNum * (m + 1)) / (2 * m);
+    return compact(raise, digits);
+  } catch {
+    return '0';
+  }
+}
+
 /** Formats a memecoin (18 decimals) bigint string into a compact human string. */
 export function fmtToken(v?: string | bigint | null, digits = 2): string {
   try {

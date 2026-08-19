@@ -97,8 +97,8 @@ export function useSwap(memecoin?: string) {
 
         if (direction === 'buy') {
           /* ------------------------------------------------- buyFairLaunch -- */
-          // Calculate max fee buffer (e.g. up to 10% fee buffer) for totalToPay approval
-          const approvalAmount = (amountIn * 110n) / 100n;
+          // Calculate 1% fee buffer for totalToPay approval
+          const approvalAmount = (amountIn * 101n) / 100n;
 
           const allowance = (await publicClient.readContract({
             address: tokenIn,

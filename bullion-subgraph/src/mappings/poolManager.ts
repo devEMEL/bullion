@@ -2,7 +2,7 @@
 import { BigInt, log } from '@graphprotocol/graph-ts'
 
 import { Initialize as InitializeEvent } from '../../generated/PoolManager/PoolManager'
-import { Pool, PoolManager, Token } from '../../generated/schema'
+import { Launch, Pool, PoolManager, Token } from '../../generated/schema'
 import { getSubgraphConfig, SubgraphConfig } from '../utils/chains'
 import { ADDRESS_ZERO, ZERO_BD, ZERO_BI, ONE_BI } from '../utils/constants'
 import { updatePoolDayData, updatePoolHourData } from '../utils/intervalUpdates'
@@ -108,6 +108,9 @@ export function handleInitializeHelper(
     token0.whitelistPools = pools
   }
 
+  token0.poolCount = token0.poolCount.plus(ONE_BI)
+  token1.poolCount = token1.poolCount.plus(ONE_BI)
+
   // ─── 4. Derive prices (must happen after whitelist pools are set) ───
   token0.derivedNative = findNativePerToken(token0, wrappedNativeAddress, stablecoinAddresses)
   token1.derivedNative = findNativePerToken(token1, wrappedNativeAddress, stablecoinAddresses)
@@ -147,6 +150,14 @@ export function handleInitializeHelper(
   token1.save()
   pool.save()
   poolManager.save()
+
+  // ─── Link Launch to Pool if exists ───
+  let launch = Launch.load(poolId)
+  if (launch !== null) {
+    launch.poolInitialized = true
+    launch.pool = pool.id
+    launch.save()
+  }
 
   // ─── 7. Snapshots (see correct derivedUSDC and pool prices) ───
   updatePoolDayData(poolId, event)

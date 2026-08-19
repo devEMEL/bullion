@@ -55,7 +55,7 @@ export function handleModifyLiquidityHelper(
   token1.derivedNative = findNativePerToken(token1, wrappedNativeAddress, stablecoinAddresses)
 
   // ─── 2. Compute token amounts from liquidity math ───
-  const currTick = pool.tick!.toI32()
+  const currTick = pool.tick !== null ? (pool.tick as BigInt).toI32() : 0
   const currSqrtPriceX96 = pool.sqrtPrice
 
   const amount0Raw = getAmount0(
@@ -75,7 +75,6 @@ export function handleModifyLiquidityHelper(
 
   const amount0 = convertTokenToDecimal(amount0Raw, token0.decimals)
   const amount1 = convertTokenToDecimal(amount1Raw, token1.decimals)
-  const amountUSD = calculateAmountUSD(amount0, amount1, token0.derivedNative, token1.derivedNative)
 
   // ─── 3. Pool liquidity (only if position spans current tick) ───
   if (

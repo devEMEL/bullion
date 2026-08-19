@@ -138,6 +138,70 @@ export const GET_LAUNCHES_BY_CREATOR = /* GraphQL */ `
   }
 `;
 
+export const GET_POOL_DETAIL = /* GraphQL */ `
+  query GetPoolDetail($id: ID!) {
+    pool(id: $id) {
+      id
+      createdAtTimestamp
+      createdAtBlockNumber
+      feeTier
+      liquidity
+      sqrtPrice
+      token0Price
+      token1Price
+      tick
+      tickSpacing
+      volumeToken0
+      volumeToken1
+      volumeUSD
+      feesUSD
+      txCount
+      collectedFeesToken0
+      collectedFeesToken1
+      collectedFeesUSD
+      totalValueLockedToken0
+      totalValueLockedToken1
+      totalValueLockedUSD
+      hooks
+      token0 {
+        id
+        symbol
+        name
+        decimals
+      }
+      token1 {
+        id
+        symbol
+        name
+        decimals
+      }
+      poolDayData(first: 30, orderBy: date, orderDirection: desc) {
+        id
+        date
+        volumeUSD
+        feesUSD
+        open
+        high
+        low
+        close
+      }
+    }
+    swaps(first: 100, where: { pool: $id }, orderBy: timestamp, orderDirection: desc) {
+      id
+      timestamp
+      origin
+      amount0
+      amount1
+      fee0
+      fee1
+      sqrtPriceX96
+      transaction {
+        id
+      }
+    }
+  }
+`;
+
 export interface SubgraphLaunch {
   id: string;
   poolId: string;

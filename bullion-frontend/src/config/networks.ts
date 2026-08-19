@@ -87,7 +87,7 @@ export const NETWORKS = {
     subgraphNetwork: 'liteforge-testnet',
     subgraphUrl:
       import.meta.env.VITE_GEMFOT_SUBGRAPH_URL ||
-      'https://api.goldsky.com/api/public/project_cmsysqw4m0s6q01tf52of958s/subgraphs/bullion-subgraph/1.0.0/gn',
+      'https://api.goldsky.com/api/public/project_cmsysqw4m0s6q01tf52of958s/subgraphs/bullion-subgraph/1.0.1/gn',
     explorerUrl: 'https://liteforge.explorer.caldera.xyz',
     rpcUrls: [
       'https://liteforge.rpc.caldera.xyz/http',

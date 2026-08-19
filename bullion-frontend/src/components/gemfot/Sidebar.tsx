@@ -61,9 +61,6 @@ export default function Sidebar({
                   >
                     <Icon size={18} className="text-white animate-bounce-subtle" />
                     <span>{item.label}</span>
-                    <span className="ml-auto text-[9px] uppercase tracking-wider font-extrabold bg-amber-400 text-black px-2 py-0.5 rounded-full shadow-sm">
-                      HOT
-                    </span>
                   </Link>
                 );
               }

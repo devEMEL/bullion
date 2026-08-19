@@ -1,3 +1,3 @@
 export { handleModifyLiquidity } from './modifyLiquidity'
 export { handleInitialize } from './poolManager'
-export { handleSwap } from './swap'
+// export { handleSwap } from './swap'

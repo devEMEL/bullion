@@ -15,7 +15,7 @@ import {
 import { useLaunches, type EnrichedLaunch } from '@/hooks/useLaunches';
 import { useVolume } from '@/hooks/useVolume';
 import { CONTRACTS } from '@/config/networks';
-import { countdown, fmtNative, progressPct, timeAgo } from '@/lib/format';
+import { calcExpectedRaise, countdown, fmtNative, progressPct, timeAgo } from '@/lib/format';
 
 type Filter = 'all' | 'live' | 'trading';
 type Sort = 'new' | 'raised' | 'progress';
@@ -103,14 +103,18 @@ function LaunchBlock({ launch, index }: { launch: EnrichedLaunch; index: number 
           </div>
         </div>
 
-        <div className="flex items-center gap-4 sm:gap-6 text-[13px]">
+        <div className="flex items-center gap-3 sm:gap-5 text-[13px] flex-wrap">
           <div className="flex items-baseline gap-1.5">
             <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/35">Raised</span>
-            <span className="font-extrabold text-white tabular-nums">{fmtNative(launch.revenue)}</span>
+            <span className="font-extrabold text-white tabular-nums">${fmtNative(launch.revenue)}</span>
           </div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/35">Target</span>
-            <span className="font-extrabold text-white tabular-nums">{fmtNative(launch.targetMarketCap)}</span>
+            <span className="font-extrabold text-white tabular-nums">${fmtNative(launch.targetMarketCap)}</span>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/35">Exp. Raise</span>
+            <span className="font-extrabold text-[#5865F2] tabular-nums">${calcExpectedRaise(launch.targetMarketCap, launch.multiple)}</span>
           </div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/35">Buys</span>

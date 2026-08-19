@@ -300,8 +300,8 @@ All of the required setters/roles above were executed by this script.
 
 REMAINING OPTIONAL CONFIGURATION (not required for a working deployment):
 
-  # Per-pool overrides (owner only, called once a pool exists)
-  cast send ${GEMFOT_MANAGER} "setPoolFeeDistribution(bytes32,(uint24,uint24,bool))" <poolId> "(300,200,true)" --rpc-url ${RPC_URL} --account ${KEYSTORE_ACCOUNT}
+  # Per-pool overrides (owner only, called once a pool exists), for fee just multiply by 100
+  cast send ${GEMFOT_MANAGER} "setPoolFeeDistribution(bytes32,(uint24,uint24,bool))" <poolId> "(30,1000,true)" --rpc-url ${RPC_URL} --account ${KEYSTORE_ACCOUNT}
   cast send ${GEMFOT_MANAGER} "setProtocolFeeDistribution(uint24)" <protocolFee> --rpc-url ${RPC_URL} --account ${KEYSTORE_ACCOUNT}
 
   # Fee exemptions for integrators / routers (owner only)
