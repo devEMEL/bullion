@@ -36,6 +36,7 @@ const GET_LAUNCH_BY_TOKEN = /* GraphQL */ `
       }
       tokenId
       currencyFlipped
+      totalSupply
       initialTokenFairLaunch
       fairLaunchDuration
       fairLaunchStartsAt

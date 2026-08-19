@@ -45,6 +45,7 @@ export function handlePoolCreated(event: PoolCreated): void {
   launch.creator = creator.id;
   launch.creatorFeeAllocation = BigInt.fromI32(params.creatorFeeAllocation);
 
+  launch.totalSupply = params.totalSupply;
   launch.initialTokenFairLaunch = params.initialTokenFairLaunch;
   launch.fairLaunchDuration = params.fairLaunchDuration;
   launch.fairLaunchStartsAt = ZERO_BI;

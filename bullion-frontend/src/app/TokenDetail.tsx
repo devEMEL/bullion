@@ -64,12 +64,135 @@ const formatCurrency = (val: string | number | undefined) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(Number(val));
 };
 
-const formatPrice = (val: number | undefined) => {
-  if (!val || isNaN(val)) return '$0.00';
-  if (val < 0.00001) return `$${val.toExponential(4)}`;
-  if (val < 1) return `$${val.toFixed(6)}`;
-  return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
+const formatSmallCurrency = (val: string | number | undefined) => {
+  if (val === undefined || val === null || isNaN(Number(val))) return '$0.00';
+
+  const num = Number(val);
+  if (num === 0) return '$0.00';
+
+  const abs = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+
+  // For "normal" magnitude numbers, just use standard currency formatting
+  if (abs >= 0.01) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+  }
+
+  // For tiny numbers, count leading zeros after the decimal point
+  const str = abs.toFixed(20).split('.')[1]; // avoid scientific notation
+  let zeroCount = 0;
+  for (const ch of str) {
+    if (ch === '0') zeroCount++;
+    else break;
+  }
+
+  const significantDigits = str.slice(zeroCount, zeroCount + 4).replace(/0+$/, '') || '0';
+
+  // Only use compact zero notation when there are 5 or more leading zeros
+  if (zeroCount >= 5) {
+    return `${sign}$0.0{${zeroCount}}${significantDigits}`;
+  }
+
+  // For 1-4 leading zeros, show standard decimal representation
+  return `${sign}$0.${'0'.repeat(zeroCount)}${significantDigits}`;
 };
+
+const formatPrice = formatSmallCurrency;
+
+function TokenInfoCard({
+  launch,
+  marketCap,
+  fdv,
+}: {
+  launch: any;
+  marketCap: number;
+  fdv: number;
+}) {
+  const isGraduated = Boolean(launch.isGraduated || launch.poolInitialized);
+
+  const items = [
+    {
+      label: 'Total supply',
+      value: fmtToken(launch.totalSupply || launch.initialTokenFairLaunch),
+    },
+    {
+      label: 'Market Cap',
+      value: formatCurrency(marketCap),
+    },
+    {
+      label: 'FDV',
+      value: formatCurrency(fdv),
+    },
+    {
+      label: 'Creator fee',
+      value: `${Number(launch.creatorFeeAllocation) / 100}%`,
+    },
+    ...(!isGraduated
+      ? [
+          {
+            label: 'Fair launch supply',
+            value: fmtToken(launch.initialTokenFairLaunch),
+          },
+          {
+            label: 'Duration',
+            value: `${(Number(launch.fairLaunchDuration) / 3600).toFixed(1)}h`,
+          },
+          {
+            label: 'Multiple',
+            value: `${launch.multiple}×`,
+          },
+          {
+            label: 'Expected raise',
+            value: `${calcExpectedRaise(launch.targetMarketCap, launch.multiple)} ${CONTRACTS.nativeTokenSymbol}`,
+          },
+          {
+            label: 'Starts',
+            value:
+              launch.fairLaunchStartsAt && Number(launch.fairLaunchStartsAt) > 0
+                ? new Date(Number(launch.fairLaunchStartsAt) * 1000).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Immediate',
+          },
+          {
+            label: 'Ends',
+            value:
+              launch.fairLaunchEndsAt && Number(launch.fairLaunchEndsAt) > 0
+                ? new Date(Number(launch.fairLaunchEndsAt) * 1000).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : '—',
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <h3 className="text-[15px] font-extrabold text-white mb-4">Info</h3>
+      <div className="grid grid-cols-2 gap-3">
+        {items.map((item) => (
+          <div key={item.label} className="rounded-2xl bg-white/5 border border-white/[0.06] px-3.5 py-3 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/35 truncate">{item.label}</p>
+            <p className="text-[14px] font-extrabold text-white mt-1 truncate tabular-nums">{item.value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3 px-1">
+        <span className="text-[12px] font-medium text-white/40">Status</span>
+        <span className={`chip ${launch.isLive ? 'chip-live' : launch.fairLaunchClosed ? '' : 'chip-ink'}`}>
+          {launch.fairLaunchClosed ? 'Closed' : launch.isLive ? 'Live' : isGraduated ? 'Graduated' : 'Ended'}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function TradeWidget({
   launch,
@@ -118,7 +241,10 @@ function TradeWidget({
     const hash = await swap(amount, side);
     if (hash) {
       setAmount('');
-      setTimeout(() => refetchLaunch(), 2500);
+      refetchLaunch();
+      setTimeout(() => refetchLaunch(), 1500);
+      setTimeout(() => refetchLaunch(), 4000);
+      setTimeout(() => refetchLaunch(), 7000);
     }
   };
 
@@ -154,26 +280,16 @@ function TradeWidget({
         </button>
       </div>
 
-      {/* Currency Switcher (if Buying) */}
+      {/* Currency indicator (Buying with BZKLTC) */}
       {side === 'buy' && (
-        <div className="flex items-center justify-center gap-2 mb-5">
-          {[CONTRACTS.nativeTokenSymbol, 'USDC'].map((sym) => (
-            <button
-              key={sym}
-              onClick={() => setPayToken(sym)}
-              className={`px-4 py-1 rounded-full text-[12px] font-bold border transition-all cursor-pointer ${
-                payToken === sym
-                  ? 'bg-white/15 border-white/30 text-white'
-                  : 'bg-transparent border-white/10 text-white/40 hover:text-white'
-              }`}
-            >
-              {sym}
-            </button>
-          ))}
+        <div className="flex items-center justify-center mb-5">
+          <span className="px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-[13px] font-extrabold flex items-center gap-1.5">
+            Pay with {CONTRACTS.nativeTokenSymbol}
+          </span>
         </div>
       )}
 
-      {/* Main Input Display matching attached design */}
+      {/* Main Input Display */}
       <div className="text-center mb-5">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/40 mb-2">
           {currentTokenSymbol} AMOUNT
@@ -322,7 +438,21 @@ function TradeWidget({
   );
 }
 
-function DexPoolAnalytics({ poolId, launch, tokenAddress, refetchLaunch }: { poolId: string; launch: any; tokenAddress: string; refetchLaunch: () => void }) {
+function DexPoolAnalytics({
+  poolId,
+  launch,
+  tokenAddress,
+  refetchLaunch,
+  targetCapUSD,
+  onPriceUpdate,
+}: {
+  poolId: string;
+  launch: any;
+  tokenAddress: string;
+  refetchLaunch: () => void;
+  targetCapUSD: number;
+  onPriceUpdate?: (price: number) => void;
+}) {
   const [pool, setPool] = useState<any>(null);
   const [swaps, setSwaps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -364,7 +494,17 @@ function DexPoolAnalytics({ poolId, launch, tokenAddress, refetchLaunch }: { poo
   }, [reversedSwaps, pool]);
 
   const currentPriceVal = pool ? getPriceFromSqrt(pool.sqrtPrice || '0', pool.token0, pool.token1) : 0;
-  const totalSupplyNum = launch?.initialTokenFairLaunch ? Number(formatUnits(BigInt(launch.initialTokenFairLaunch), 18)) : 10_000_000_000;
+
+  useEffect(() => {
+    if (currentPriceVal > 0 && onPriceUpdate) {
+      onPriceUpdate(currentPriceVal);
+    }
+  }, [currentPriceVal, onPriceUpdate]);
+  const totalSupplyNum = launch?.totalSupply
+    ? Number(formatUnits(BigInt(launch.totalSupply), 18))
+    : launch?.initialTokenFairLaunch
+      ? Number(formatUnits(BigInt(launch.initialTokenFairLaunch), 18))
+      : 10_000_000_000;
   const currentMarketCap = currentPriceVal * totalSupplyNum;
 
   useEffect(() => {
@@ -507,11 +647,11 @@ function DexPoolAnalytics({ poolId, launch, tokenAddress, refetchLaunch }: { poo
       {/* 6 Metric Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Token Price', val: formatPrice(currentPriceVal) },
-          { label: 'Market Cap', val: formatCurrency(currentMarketCap) },
           { label: '24h Volume', val: formatCurrency(vol24h) },
           { label: '7d Volume', val: formatCurrency(vol7d) },
           { label: 'All Time Volume', val: formatCurrency(pool?.volumeUSD) },
+          { label: '24h Fees', val: formatCurrency(fees24h) },
+          { label: '7d Fees', val: formatCurrency(fees7d) },
           { label: 'All Time Fees', val: formatCurrency(pool?.feesUSD) },
         ].map((m, i) => (
           <div
@@ -524,7 +664,7 @@ function DexPoolAnalytics({ poolId, launch, tokenAddress, refetchLaunch }: { poo
         ))}
       </div>
 
-      {/* Main Grid: Chart + Trade Widget & Balances */}
+      {/* Main Grid: Chart + Trade Widget, TVL & Info Card */}
       <div className="grid lg:grid-cols-[1.55fr_1fr] gap-5 items-start">
         {/* Price Chart */}
         <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-md flex flex-col justify-between min-h-[380px]">
@@ -541,9 +681,9 @@ function DexPoolAnalytics({ poolId, launch, tokenAddress, refetchLaunch }: { poo
             <div className="mb-2">
               <p className="text-3xl font-extrabold text-white tabular-nums tracking-tight">
                 {hoveredPoint
-                  ? `$${hoveredPoint.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`
+                  ? formatPrice(hoveredPoint.price)
                   : currentPriceVal
-                    ? `$${currentPriceVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`
+                    ? formatPrice(currentPriceVal)
                     : '—'}
               </p>
               <p className="text-[12px] font-medium text-white/40 font-mono mt-1">
@@ -563,9 +703,10 @@ function DexPoolAnalytics({ poolId, launch, tokenAddress, refetchLaunch }: { poo
           </div>
         </div>
 
-        {/* Inline Trade Widget + TVL & Balances */}
+        {/* Inline Trade Widget + TVL & Info Card */}
         <div className="space-y-5">
           <TradeWidget launch={launch} tokenAddress={tokenAddress} refetchLaunch={refetchLaunch} />
+          <TokenInfoCard launch={launch} marketCap={currentMarketCap} fdv={targetCapUSD} />
 
           <div className="bg-[#121624] rounded-[28px] p-6 border border-white/[0.08] shadow-md">
             <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/35">Total Value Locked</p>
@@ -684,6 +825,7 @@ export default function TokenDetail() {
   const { address: tokenAddress } = useParams<{ address: string }>();
   const { launch, loading, error, refetch } = useLaunch(tokenAddress);
   const [copied, setCopied] = useState(false);
+  const [dexPrice, setDexPrice] = useState<number | null>(null);
 
   const pct = useMemo(
     () => progressPct(launch?.initialTokenFairLaunch, launch?.remainingSupply),
@@ -691,9 +833,10 @@ export default function TokenDetail() {
   );
 
   const totalSupply = useMemo(() => {
-    if (!launch?.initialTokenFairLaunch) return 10_000_000_000;
+    const rawSupply = launch?.totalSupply || launch?.initialTokenFairLaunch;
+    if (!rawSupply) return 10_000_000_000;
     try {
-      return Number(formatUnits(BigInt(launch.initialTokenFairLaunch), 18));
+      return Number(formatUnits(BigInt(rawSupply), 18));
     } catch {
       return 10_000_000_000;
     }
@@ -702,7 +845,7 @@ export default function TokenDetail() {
   const targetCapUSD = useMemo(() => {
     if (!launch?.targetMarketCap) return 0;
     try {
-      return Number(formatUnits(BigInt(launch.targetMarketCap), 6));
+      return Number(formatUnits(BigInt(launch.targetMarketCap), CONTRACTS.nativeTokenDecimals));
     } catch {
       return Number(launch.targetMarketCap);
     }
@@ -711,6 +854,7 @@ export default function TokenDetail() {
   // Fair launch price and market cap calculations
   const fairLaunchMarketCap = targetCapUSD * (pct / 100);
   const fairLaunchPrice = totalSupply > 0 ? fairLaunchMarketCap / totalSupply : 0;
+  const displayPrice = launch?.isGraduated ? dexPrice : fairLaunchPrice;
 
   const volume = useMemo(() => {
     if (!launch) return { day: 0n, all: 0n };
@@ -769,7 +913,7 @@ export default function TokenDetail() {
           All launches
         </Link>
 
-        {/* Token Header with Price & Market Cap badges */}
+        {/* Token Header */}
         <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] mb-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-start gap-4 md:gap-5 min-w-0">
@@ -825,36 +969,40 @@ export default function TokenDetail() {
               </div>
             </div>
 
-            {/* Price & Market Cap Header Summary */}
-            <div className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/[0.06] shrink-0">
-              <div className="px-3 py-1.5 border-r border-white/10 text-right">
-                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/40">Price</p>
-                <p className="text-base font-extrabold text-white tabular-nums">
-                  {formatPrice(fairLaunchPrice)}
-                </p>
-              </div>
-              <div className="px-3 py-1.5 text-right">
-                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/40">Market Cap</p>
-                <p className="text-base font-extrabold text-[#5865F2] tabular-nums">
-                  {formatCurrency(fairLaunchMarketCap)}
-                </p>
-              </div>
+            {/* Token Price Header Badge Only */}
+            <div className="bg-white/[0.03] px-5 py-3 rounded-2xl border border-white/[0.08] shrink-0 text-right md:text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/40">Token Price</p>
+              <p className="text-xl md:text-2xl font-black text-white tabular-nums min-h-[32px] flex items-center justify-end">
+                {displayPrice !== null ? (
+                  formatPrice(displayPrice)
+                ) : (
+                  <span className="inline-block w-20 h-6 bg-white/10 rounded-md animate-pulse" />
+                )}
+              </p>
             </div>
           </div>
         </div>
 
         {/* DUAL MODE VIEW: DEX Analytics when graduated vs Fair Launch Bonding Curve */}
         {launch.isGraduated && launch.poolId ? (
-          <DexPoolAnalytics poolId={launch.poolId} launch={launch} tokenAddress={tokenAddress || ''} refetchLaunch={refetch} />
+          <DexPoolAnalytics
+            poolId={launch.poolId}
+            launch={launch}
+            tokenAddress={tokenAddress || ''}
+            refetchLaunch={refetch}
+            targetCapUSD={targetCapUSD}
+            onPriceUpdate={setDexPrice}
+          />
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-5">
-              <StatPill label="Price" value={formatPrice(fairLaunchPrice)} hint="Per Token" />
-              <StatPill label="Market Cap" value={formatCurrency(fairLaunchMarketCap)} hint="Price × Total Supply" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 mb-5">
               <StatPill label="Volume · 24h" value={`$${fmtNative(volume.day.toString())}`} hint={CONTRACTS.nativeTokenSymbol} />
               <StatPill label="Volume · all time" value={`$${fmtNative(volume.all.toString())}`} hint={CONTRACTS.nativeTokenSymbol} />
+              <StatPill label="Raised" value={`$${fmtNative(launch.revenue)}`} hint={CONTRACTS.nativeTokenSymbol} />
               <StatPill label="Target MC" value={`$${fmtNative(launch.targetMarketCap)}`} hint={CONTRACTS.nativeTokenSymbol} />
+              <StatPill label="Expected Raise" value={`$${calcExpectedRaise(launch.targetMarketCap, launch.multiple)}`} hint={CONTRACTS.nativeTokenSymbol} />
+              <StatPill label="Remaining" value={fmtToken(launch.remainingSupply)} hint={launch.symbol} />
               <StatPill label="Buys" value={String(launch.buyCount)} hint="Fair launch trades" />
             </div>
 
@@ -970,81 +1118,10 @@ export default function TokenDetail() {
                 </div>
               </div>
 
-              {/* Right column: Inline Trade Widget + Parameters */}
+              {/* Right column: Inline Trade Widget + Info Card */}
               <div className="space-y-5">
                 <TradeWidget launch={launch} tokenAddress={tokenAddress || ''} refetchLaunch={refetch} />
-
-                {!launch.isGraduated && (
-                  <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-                    <h3 className="text-[15px] font-extrabold text-white mb-4">Parameters</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        {
-                          label: 'Fair launch supply',
-                          value: fmtToken(launch.initialTokenFairLaunch),
-                        },
-                        {
-                          label: 'Duration',
-                          value: `${(Number(launch.fairLaunchDuration) / 3600).toFixed(1)}h`,
-                        },
-                        {
-                          label: 'Creator fee',
-                          value: `${Number(launch.creatorFeeAllocation) / 100}%`,
-                        },
-                        {
-                          label: 'Multiple',
-                          value: `${launch.multiple}×`,
-                        },
-                        {
-                          label: 'Expected raise',
-                          value: `${calcExpectedRaise(launch.targetMarketCap, launch.multiple)} ${CONTRACTS.nativeTokenSymbol}`,
-                        },
-                        {
-                          label: 'Starts',
-                          value:
-                            launch.fairLaunchStartsAt && Number(launch.fairLaunchStartsAt) > 0
-                              ? new Date(Number(launch.fairLaunchStartsAt) * 1000).toLocaleDateString(
-                                  undefined,
-                                  { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-                                )
-                              : 'Immediate',
-                        },
-                        {
-                          label: 'Ends',
-                          value:
-                            launch.fairLaunchEndsAt && Number(launch.fairLaunchEndsAt) > 0
-                              ? new Date(Number(launch.fairLaunchEndsAt) * 1000).toLocaleDateString(
-                                  undefined,
-                                  { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-                                )
-                              : '—',
-                        },
-                      ].map((item) => (
-                        <div
-                          key={item.label}
-                          className="rounded-2xl bg-white/5 border border-white/[0.06] px-3.5 py-3 min-w-0"
-                        >
-                          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/35 truncate">
-                            {item.label}
-                          </p>
-                          <p className="text-[14px] font-extrabold text-white mt-1 truncate tabular-nums">
-                            {item.value}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-3 px-1">
-                      <span className="text-[12px] font-medium text-white/40">Status</span>
-                      <span
-                        className={`chip ${
-                          launch.isLive ? 'chip-live' : launch.fairLaunchClosed ? '' : 'chip-ink'
-                        }`}
-                      >
-                        {launch.fairLaunchClosed ? 'Closed' : launch.isLive ? 'Live' : 'Ended'}
-                      </span>
-                    </div>
-                  </div>
-                )}
+                <TokenInfoCard launch={launch} marketCap={fairLaunchMarketCap} fdv={targetCapUSD} />
               </div>
             </div>
           </>

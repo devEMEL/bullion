@@ -33,6 +33,7 @@ type Launch @entity(immutable: false) {
   creator: Creator!
   creatorFeeAllocation: BigInt!
 
+  totalSupply: BigInt!
   initialTokenFairLaunch: BigInt!
   fairLaunchDuration: BigInt!
   fairLaunchStartsAt: BigInt!

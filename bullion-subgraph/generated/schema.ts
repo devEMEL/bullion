@@ -329,6 +329,19 @@ export class Launch extends Entity {
     this.set("creatorFeeAllocation", Value.fromBigInt(value));
   }
 
+  get totalSupply(): BigInt {
+    let value = this.get("totalSupply");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set totalSupply(value: BigInt) {
+    this.set("totalSupply", Value.fromBigInt(value));
+  }
+
   get initialTokenFairLaunch(): BigInt {
     let value = this.get("initialTokenFairLaunch");
     if (!value || value.kind == ValueKind.NULL) {

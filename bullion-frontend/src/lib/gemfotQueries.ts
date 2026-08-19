@@ -34,6 +34,7 @@ export const GET_LAUNCHES = /* GraphQL */ `
       }
       tokenId
       currencyFlipped
+      totalSupply
       initialTokenFairLaunch
       fairLaunchDuration
       fairLaunchStartsAt
@@ -213,6 +214,7 @@ export interface SubgraphLaunch {
   creator: string | { id: string };
   tokenId: string;
   currencyFlipped: boolean;
+  totalSupply?: string;
   initialTokenFairLaunch: string;
   fairLaunchDuration: string;
   fairLaunchStartsAt: string;
