@@ -108,8 +108,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         uint128 _liquidity
     );
 
-    /// Emitted when a user successfully premines their token
-    event PoolPremine(PoolId indexed _poolId, int _premineAmount);
 
     /// Emitted when unused premine is forfeited (deadline / sold out) and tstore cleared
     event PremineBurned(PoolId indexed _poolId, uint _premineAmount);
@@ -195,6 +193,9 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
 
     /// Internal storage to allow the `beforeSwap` tick value to be used in `afterSwap`
     int24 internal _beforeSwapTick;
+
+    // State: the one contract trusted to trigger creator premine buys
+    address public premineContract;
 
 
     /// Store the address that will collect protocol fees
@@ -375,7 +376,7 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
 
 
         // Notify our subscribed contracts
-        notifier.notifySubscribers(poolId, IHooks.afterInitialize.selector, abi.encode(tokenId, _params));
+        notifier.notifySubscribers(poolId, IHooks.afterInitialize.selector, abi.encode(tokenId, _params)); // this should trigger both Indexer and Premine subscribers 
  
     }
 
@@ -764,41 +765,49 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      * @param _key The PoolKey for the token pool
      * @param _nativeIn The amount of native currency (USDC) being spent on the bonding curve
      */
+    
+    function setPremineContract(address _premineContract) external onlyOwner {
+        premineContract = _premineContract;
+    }
+
     function buyFairLaunch(
         PoolKey calldata _key,
         uint256 _nativeIn
     ) external {
         PoolId poolId = _key.toId();
 
-        // if (!fairLaunch.inFairLaunchWindow(poolId)) {
-        //     revert FairLaunch.FairLaunchWindowHasClosed();
-        // }
-         FairLaunch.FairLaunchInfo memory info_ = fairLaunch.fairLaunchInfo(poolId);
-         if(info_.closed) {
+        FairLaunch.FairLaunchInfo memory info_ = fairLaunch.fairLaunchInfo(poolId);
+        if (info_.closed) {
             revert FairLaunch.FairLaunchWindowHasClosed();
-         }
+        }
+
+        address memecoinAddress = Currency.unwrap(_key.currency0) == nativeToken
+            ? Currency.unwrap(_key.currency1)
+            : Currency.unwrap(_key.currency0);
+
+        // Only the trusted premine contract can trigger a creator-premine buy.
+        // When it calls, the buyer/recipient is always resolved to the token's
+        // creator — never to msg.sender or any caller-supplied address — so
+        // there's no way to redirect premine tokens or funds elsewhere.
+        bool isPremineCall = msg.sender == premineContract;
+        address creator = IMemecoin(memecoinAddress).creator();
+        address buyer = isPremineCall ? creator : msg.sender;
 
         uint _launchesAt = launchesAt[poolId];
-        int premineAmount;
-        bool isCreatorPremine;
+        int premineAmount = _tload(PoolId.unwrap(poolId));
 
-        if (_launchesAt != 0) {
-            premineAmount = _tload(PoolId.unwrap(poolId));
-            address memecoinAddress = Currency.unwrap(_key.currency0) == nativeToken ? Currency.unwrap(_key.currency1) : Currency.unwrap(_key.currency0);
+        bool isCreatorPremine = isPremineCall && premineAmount > 0;
 
-            isCreatorPremine = premineAmount > 0
-                && msg.sender == IMemecoin(memecoinAddress).creator();
-
-            if (!isCreatorPremine) {
-                if (_launchesAt > block.timestamp) {
-                    revert TokenNotLaunched(_launchesAt);
-                }
+        if (!isCreatorPremine) {
+            if (_launchesAt > block.timestamp) {
+                revert TokenNotLaunched(_launchesAt);
+            }
+            if (_launchesAt != 0) {
                 delete launchesAt[poolId];
             }
         }
 
-        // 1. Sell tokens from the bonding curve for the USDC amount the buyer is depositing.
-        //    `fillFromPosition` takes the native (USDC) amount in and returns the memecoins out.
+        // 1. Sell tokens from the bonding curve for the USDC amount being deposited.
         (uint nativeIn, uint tokensOut, FairLaunch.FairLaunchInfo memory info) = fairLaunch.fillFromPosition(
             poolId,
             _nativeIn.toInt256()
@@ -808,23 +817,19 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
             revert("No tokens available");
         }
 
-        // 1a. The premine allocation is denominated in memecoins, so it can only be settled once
-        //     the curve has told us how many tokens this deposit actually buys.
         if (isCreatorPremine) {
             require(tokensOut <= uint256(premineAmount), "Exceeds premine allocation");
-            int newPremine = premineAmount - int256(tokensOut);
             emit PoolPremine(poolId, int256(tokensOut));
-            assembly { tstore(poolId, newPremine) }
+            assembly { tstore(poolId, 0) }
         }
-
 
         // 2. Calculate swap fee
         uint24 baseSwapFee = getPoolFeeDistribution(poolId).swapFee;
         uint swapFee = (nativeIn * baseSwapFee) / ONE_HUNDRED_PERCENT;
         uint totalToPay = nativeIn + swapFee;
 
-        // 3. Transfer native token from user to this contract
-        nativeToken.safeTransferFrom(msg.sender, address(this), totalToPay);
+        // 3. Pull funds from the resolved buyer (creator, if this is a premine call)
+        nativeToken.safeTransferFrom(buyer, address(this), totalToPay);
 
         // 4. Deposit fee internally
         if (swapFee > 0) {
@@ -835,9 +840,8 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
             }
         }
 
-        // 5. Transfer purchased memecoins to user
-        address memecoin = Currency.unwrap(_key.currency0) == nativeToken ? Currency.unwrap(_key.currency1) : Currency.unwrap(_key.currency0);
-        memecoin.safeTransfer(msg.sender, tokensOut);
+        // 5. Transfer purchased memecoins to the resolved buyer
+        memecoinAddress.safeTransfer(buyer, tokensOut);
 
         // 6. Distribute fees
         _distributeFees(_key);
@@ -1077,6 +1081,11 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         address _launchContract
     ) public onlyOwner {
         launchContract = ILaunch(_launchContract);
+    }
+
+
+    function setPremineContract(address _premineContract) external onlyOwner {
+        premineContract = _premineContract;
     }
 
     /**
