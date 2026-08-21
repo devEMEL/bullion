@@ -84,7 +84,7 @@ export function getSubgraphConfig(): SubgraphConfig {
   if (selectedNetwork == LITEFORGE_NETWORK_NAME) {
     return {
       // Lock Bundle.ethPriceUSD to $1 SINCE ARC USES USDC AS NATIVE TOKEN
-      poolManagerAddress: '',
+      poolManagerAddress: '0xF351A424955ba04e3d49dDa6E549a5983dB264B9',
       stablecoinWrappedNativePoolId: '', 
       stablecoinIsToken0: false,
       wrappedNativeAddress: '0xd03307a0d5092b17c12ca9380f707f7d7fcd8f09', // bZKLTC

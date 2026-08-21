@@ -87,7 +87,7 @@ export const NETWORKS = {
     subgraphNetwork: 'liteforge-testnet',
     subgraphUrl:
       import.meta.env.VITE_GEMFOT_SUBGRAPH_URL ||
-      'https://api.goldsky.com/api/public/project_cmsysqw4m0s6q01tf52of958s/subgraphs/bullion-subgraph/1.0.1/gn',
+      'https://api.goldsky.com/api/public/project_cmsysqw4m0s6q01tf52of958s/subgraphs/bullion-subgraph/1.0.0/gn',
     explorerUrl: 'https://liteforge.explorer.caldera.xyz',
     rpcUrls: [
       'https://liteforge.rpc.caldera.xyz/http',
@@ -95,7 +95,7 @@ export const NETWORKS = {
     startBlock: 0,
     contracts: {
       nativeToken: '0xd03307a0d5092B17C12cA9380f707f7d7FCD8f09',
-      nativeTokenSymbol: 'BZKLTC',
+      nativeTokenSymbol: 'bUSDC',
       nativeTokenDecimals: 18,
 
       poolManager: '0xF351A424955ba04e3d49dDa6E549a5983dB264B9',

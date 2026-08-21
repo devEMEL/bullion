@@ -11,9 +11,9 @@ export const TOKENS: TokenConfig[] = [
   {
     "address": "0xD2E89ec3ee53E017b9fE5755baD2D00622250a31" as `0x${string}`,
     "name": "Bullion ZKLTC",
-    "symbol": "BZKLTC",
+    "symbol": "bUSDC",
     "decimals": 18,
-    "logo": "/assets/bzkltc/logo.png"
+    "logo": "/assets/busdc/logo.png"
   },
   {
     "address": "0x3600000000000000000000000000000000000000" as `0x${string}`,

@@ -47,6 +47,7 @@ export const GET_LAUNCHES = /* GraphQL */ `
       revenue
       remainingSupply
       buyCount
+      poolInitialized
       createdAtTimestamp
       createdAtBlock
       transactionHash
@@ -80,6 +81,7 @@ export const GET_LAUNCH = /* GraphQL */ `
       revenue
       remainingSupply
       buyCount
+      poolInitialized
       createdAtTimestamp
       transactionHash
       buys(first: 50, orderBy: timestamp, orderDirection: desc) {
@@ -114,6 +116,21 @@ export const GET_VOLUME = /* GraphQL */ `
       id
       nativeIn
       timestamp
+    }
+  }
+`;
+
+/** Aggregate DEX totals from the poolManager singleton. */
+export const GET_GLOBAL_STATS = /* GraphQL */ `
+  query GetGlobalStats {
+    poolManagers(first: 1) {
+      totalVolumeUSD
+      totalFeesUSD
+    }
+    uniswapDayDatas(first: 1, orderBy: date, orderDirection: desc) {
+      date
+      volumeUSD
+      feesUSD
     }
   }
 `;
@@ -227,6 +244,8 @@ export interface SubgraphLaunch {
   revenue: string;
   remainingSupply: string;
   buyCount: string;
+  /** True once the Uniswap V4 pool has been initialized via handleInitialize */
+  poolInitialized: boolean;
   createdAtTimestamp: string;
   createdAtBlock?: string;
   transactionHash: string;

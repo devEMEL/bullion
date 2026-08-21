@@ -159,7 +159,7 @@ export default function Header() {
                   <div className="flex flex-col items-start leading-tight gap-0.5">
                     <span className="text-[12px] font-bold text-white tracking-tight">{short}</span>
                     <span className="text-[10px] font-semibold text-white/45 font-mono">
-                      {bal} {CONTRACTS.nativeTokenSymbol || 'BZKLTC'}
+                      {bal} {CONTRACTS.nativeTokenSymbol || 'bUSDC'}
                     </span>
                   </div>
                   <ChevronDown

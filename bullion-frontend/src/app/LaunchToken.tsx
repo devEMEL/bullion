@@ -217,7 +217,7 @@ export default function LaunchToken() {
     step === 'uploading'
       ? 'Uploading to IPFS…'
       : step === 'approving'
-        ? 'Approving 10 bZKLTC launch fee…'
+        ? 'Approving 10 bUSDC launch fee…'
         : step === 'signing'
           ? 'Confirm in your wallet…'
           : step === 'confirming'
@@ -291,7 +291,7 @@ export default function LaunchToken() {
             Launch your memecoin
           </h1>
           <p className="text-white/50 text-[14px] mt-1.5 max-w-[52ch] mx-auto leading-relaxed">
-            Bonding-curve fair launch, automatic liquidity, and creator fees. Launch fee is 10 bZKLTC.
+            Bonding-curve fair launch, automatic liquidity, and creator fees. Launch fee is 10 bUSDC.
           </p>
         </div>
 
@@ -512,7 +512,7 @@ export default function LaunchToken() {
             </button>
 
             <p className="text-[12px] font-medium text-white/35 text-center">
-              Launch fee is 10 bZKLTC + gas on {activeNetwork.label}
+              Launch fee is 10 bUSDC + gas on {activeNetwork.label}
             </p>
           </div>
         </form>
@@ -544,11 +544,11 @@ export default function LaunchToken() {
                     ? `Starts in ${formatDuration(form.startsInSeconds)}`
                     : 'Immediately',
                 ],
-                ['Target Market Cap', `${Number(form.targetMarketCap).toLocaleString()} bZKLTC`],
+                ['Target Market Cap', `${Number(form.targetMarketCap).toLocaleString()} bUSDC`],
                 [
                   'Expected Raise',
                   expectedRaise !== null
-                    ? `${expectedRaise.toLocaleString(undefined, { maximumFractionDigits: 2 })} bZKLTC`
+                    ? `${expectedRaise.toLocaleString(undefined, { maximumFractionDigits: 2 })} bUSDC`
                     : '—',
                 ],
                 ['Curve Multiple', `${form.multiple}x`],
@@ -564,12 +564,12 @@ export default function LaunchToken() {
               ))}
               <div className="flex justify-between py-2.5 text-[#5865F2]">
                 <span className="font-semibold">Launch Fee</span>
-                <span className="font-extrabold">10 bZKLTC</span>
+                <span className="font-extrabold">10 bUSDC</span>
               </div>
             </div>
 
             <p className="text-[12px] text-white/40 leading-relaxed">
-              By proceeding, you will approve GemFotManager to spend 10 bZKLTC and trigger token
+              By proceeding, you will approve GemFotManager to spend 10 bUSDC and trigger token
               deployment.
             </p>
 

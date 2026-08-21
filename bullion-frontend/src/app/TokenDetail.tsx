@@ -46,7 +46,7 @@ const getPriceFromSqrt = (sqrtPriceStr: string, token0: any, token1: any) => {
 
   const getPriority = (symbol: string) => {
     const sym = (symbol || '').toUpperCase();
-    if (sym === 'USDC' || sym === 'BZKLTC' || sym === CONTRACTS.nativeTokenSymbol.toUpperCase()) return 100;
+    if (sym === 'USDC' || sym === 'bUSDC' || sym === CONTRACTS.nativeTokenSymbol.toUpperCase()) return 100;
     if (sym === 'ETH' || sym === 'WETH') return 50;
     return 0;
   };
@@ -718,9 +718,77 @@ function DexPoolAnalytics({
 
   if (loading && !pool) {
     return (
-      <div className="bg-[#121624] rounded-[28px] p-8 border border-white/[0.08] flex items-center justify-center gap-3">
-        <Loader2 size={18} className="animate-spin text-[#5865F2]" />
-        <span className="text-white/40 text-sm font-semibold">Loading DEX Analytics...</span>
+      <div className="space-y-6">
+        {/* Metric grid skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {Array(6).fill(0).map((_, i) => (
+            <div key={i} className="bg-[#121624] rounded-2xl p-4 border border-white/[0.08] flex flex-col gap-3">
+              <div className="h-3 w-20 bg-white/5 rounded animate-pulse" />
+              <div className="h-6 w-16 bg-white/5 rounded-lg animate-pulse" />
+            </div>
+          ))}
+        </div>
+
+        {/* Chart + side panel skeleton */}
+        <div className="grid lg:grid-cols-[1.55fr_1fr] gap-5 items-start">
+          {/* Chart skeleton */}
+          <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] min-h-[380px] flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="h-3 w-24 bg-white/5 rounded animate-pulse" />
+              <div className="h-5 w-28 bg-white/5 rounded-full animate-pulse" />
+            </div>
+            <div className="h-8 w-32 bg-white/5 rounded animate-pulse" />
+            <div className="flex-1 min-h-[200px] bg-white/[0.02] rounded-2xl animate-pulse" />
+          </div>
+
+          {/* Side panel skeleton */}
+          <div className="space-y-5">
+            {/* Trade widget skeleton */}
+            <div className="bg-[#121624] rounded-[28px] p-6 border border-white/[0.08] flex flex-col gap-4">
+              <div className="h-5 w-32 bg-white/5 rounded animate-pulse mx-auto" />
+              <div className="h-10 bg-white/5 rounded-2xl animate-pulse" />
+              <div className="h-14 bg-white/5 rounded-2xl animate-pulse" />
+              <div className="flex gap-2 justify-center">
+                {Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="h-7 w-14 bg-white/5 rounded-full animate-pulse" />
+                ))}
+              </div>
+              <div className="h-14 bg-white/5 rounded-2xl animate-pulse" />
+            </div>
+            {/* Info card skeleton */}
+            <div className="bg-[#121624] rounded-[28px] p-6 border border-white/[0.08] flex flex-col gap-3">
+              <div className="h-4 w-12 bg-white/5 rounded animate-pulse" />
+              <div className="grid grid-cols-2 gap-3">
+                {Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="rounded-2xl bg-white/5 border border-white/[0.06] px-3.5 py-3 flex flex-col gap-2">
+                    <div className="h-2.5 w-16 bg-white/5 rounded animate-pulse" />
+                    <div className="h-5 w-20 bg-white/5 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Swaps table skeleton */}
+        <div className="bg-[#121624] rounded-[28px] overflow-hidden border border-white/[0.08]">
+          <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
+            <div className="h-5 w-28 bg-white/5 rounded animate-pulse" />
+            <div className="h-4 w-16 bg-white/5 rounded animate-pulse" />
+          </div>
+          <div className="divide-y divide-white/[0.06]">
+            {Array(5).fill(0).map((_, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1.5fr_1fr_1.2fr_1.2fr_1fr] gap-4 px-6 py-4 items-center animate-pulse">
+                <div className="h-4 bg-white/5 rounded w-12" />
+                <div className="h-4 bg-white/5 rounded w-32" />
+                <div className="h-4 bg-white/5 rounded w-14" />
+                <div className="h-4 bg-white/5 rounded w-20" />
+                <div className="h-4 bg-white/5 rounded w-20" />
+                <div className="h-4 bg-white/5 rounded w-20 ml-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -863,6 +931,12 @@ function DexPoolAnalytics({
               const isSellToken0 = Number(row.amount0) < 0;
               const typeText = `Swap ${isSellToken0 ? `${pool.token0.symbol} for ${pool.token1.symbol}` : `${pool.token1.symbol} for ${pool.token0.symbol}`}`;
 
+              // bUSDC is pegged 1:1 to USD, use its absolute amount as the USD value
+              const nativeAddr = CONTRACTS.nativeToken.toLowerCase();
+              const isToken0Native = pool.token0.id?.toLowerCase() === nativeAddr;
+              const nativeAmount = isToken0Native ? Number(row.amount0) : Number(row.amount1);
+              const usdValue = Math.abs(nativeAmount);
+
               return (
                 <div
                   key={row.id}
@@ -870,7 +944,7 @@ function DexPoolAnalytics({
                 >
                   <div className="text-[12px] font-medium text-white/50">{formattedTime}</div>
                   <div className="text-[13px] font-bold text-white">{typeText}</div>
-                  <div className="text-[13px] font-bold text-white tabular-nums">{formatCurrency(row.amountUSD)}</div>
+                  <div className="text-[13px] font-bold text-white tabular-nums">{formatCurrency(usdValue)}</div>
                   <div className={`text-[13px] font-bold tabular-nums ${isSellToken0 ? 'text-white/60' : 'text-[#5865F2]'}`}>
                     {Number(row.amount0).toFixed(4)} {pool.token0.symbol}
                   </div>
@@ -977,9 +1051,94 @@ export default function TokenDetail() {
 
   if (loading && !launch) {
     return (
-      <div className="pt-[64px] min-h-screen flex flex-col items-center justify-center gap-3 py-40">
-        <Loader2 size={22} className="animate-spin text-[#5865F2]" />
-        <p className="text-[13px] font-semibold text-white/40">Loading token…</p>
+      <div className="min-h-screen">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 md:py-8">
+          {/* Back link skeleton */}
+          <div className="h-4 w-24 bg-white/5 rounded animate-pulse mb-5" />
+
+          {/* Token header skeleton */}
+          <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] mb-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-[20px] bg-white/5 shrink-0 animate-pulse" />
+                <div className="flex flex-col gap-3 flex-1">
+                  <div className="h-8 w-48 bg-white/5 rounded animate-pulse" />
+                  <div className="flex gap-2">
+                    <div className="h-5 w-24 bg-white/5 rounded-full animate-pulse" />
+                    <div className="h-5 w-20 bg-white/5 rounded-full animate-pulse" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white/[0.03] px-5 py-3 rounded-2xl border border-white/[0.08] flex flex-col gap-2">
+                <div className="h-3 w-16 bg-white/5 rounded animate-pulse" />
+                <div className="h-7 w-24 bg-white/5 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Stats row skeleton */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 mb-5">
+            {Array(7).fill(0).map((_, i) => (
+              <div key={i} className="bg-[#121624] rounded-2xl px-4 py-3.5 border border-white/[0.08] flex flex-col gap-2">
+                <div className="h-3 w-20 bg-white/5 rounded animate-pulse" />
+                <div className="h-6 w-16 bg-white/5 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          {/* Main grid skeleton */}
+          <div className="grid lg:grid-cols-[1.55fr_1fr] gap-5 items-start">
+            {/* Left col */}
+            <div className="space-y-5">
+              <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] flex flex-col gap-4 min-h-[200px]">
+                <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
+                <div className="h-3 bg-white/5 rounded-full animate-pulse" />
+                <div className="h-16 bg-white/5 rounded-2xl animate-pulse mt-2" />
+              </div>
+              <div className="bg-[#121624] rounded-[28px] overflow-hidden border border-white/[0.08]">
+                <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between">
+                  <div className="h-4 w-20 bg-white/5 rounded animate-pulse" />
+                  <div className="h-3 w-16 bg-white/5 rounded animate-pulse" />
+                </div>
+                {Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_1.2fr_1fr_auto] gap-4 px-5 py-3 border-b border-white/[0.06] animate-pulse">
+                    <div className="h-4 bg-white/5 rounded w-16" />
+                    <div className="h-4 bg-white/5 rounded w-24" />
+                    <div className="h-4 bg-white/5 rounded w-16" />
+                    <div className="h-4 bg-white/5 rounded w-12" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right col */}
+            <div className="space-y-5">
+              <div className="bg-[#121624] rounded-[28px] p-6 border border-white/[0.08] flex flex-col gap-4">
+                <div className="h-5 w-32 bg-white/5 rounded animate-pulse mx-auto" />
+                <div className="h-10 bg-white/5 rounded-2xl animate-pulse" />
+                <div className="h-14 bg-white/5 rounded-2xl animate-pulse" />
+                <div className="flex gap-2 justify-center">
+                  {Array(4).fill(0).map((_, i) => (
+                    <div key={i} className="h-7 w-14 bg-white/5 rounded-full animate-pulse" />
+                  ))}
+                </div>
+                <div className="h-14 bg-white/5 rounded-2xl animate-pulse" />
+              </div>
+              <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] flex flex-col gap-3">
+                <div className="h-4 w-12 bg-white/5 rounded animate-pulse" />
+                <div className="grid grid-cols-2 gap-3">
+                  {Array(6).fill(0).map((_, i) => (
+                    <div key={i} className="rounded-2xl bg-white/5 border border-white/[0.06] px-3.5 py-3 flex flex-col gap-2">
+                      <div className="h-2.5 w-16 bg-white/5 rounded animate-pulse" />
+                      <div className="h-5 w-20 bg-white/5 rounded animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

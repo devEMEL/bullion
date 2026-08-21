@@ -57,6 +57,7 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
 
       setError(null);
       setTxHash(null);
+      setStep('approving'); // show loading immediately — before any async RPC calls
 
       try {
         const poolKey = (await publicClient.readContract({

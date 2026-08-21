@@ -77,7 +77,7 @@ export default function FaucetPage() {
   const userBalanceRaw = faucetData?.[3]?.result as bigint | undefined;
   const timeRemainingRaw = faucetData?.[4]?.result as bigint | undefined;
 
-  const tokenSymbol = CONTRACTS.nativeTokenSymbol || 'BZKLTC';
+  const tokenSymbol = CONTRACTS.nativeTokenSymbol || 'bUSDC';
   const tokenDecimals = CONTRACTS.nativeTokenDecimals || 18;
 
   // Formatted values with instant fallback defaults

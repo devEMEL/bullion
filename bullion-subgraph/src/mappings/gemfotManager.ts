@@ -124,13 +124,7 @@ export function handlePoolStateUpdated(event: PoolStateUpdated): void {
 
 
 export function handlePoolSwap(event: PoolSwap): void {
-  handlePoolSwapHelper(event)
-}
-
-export function handlePoolSwapHelper(
-  event: PoolSwap,
-  subgraphConfig: SubgraphConfig = getSubgraphConfig()
-): void {
+  const subgraphConfig = getSubgraphConfig()
   const poolManagerAddress = subgraphConfig.poolManagerAddress
   const wrappedNativeAddress = subgraphConfig.wrappedNativeAddress
   const stablecoinAddresses = subgraphConfig.stablecoinAddresses
@@ -160,12 +154,14 @@ export function handlePoolSwapHelper(
   // 1. Convert raw BigInt amounts and fees to decimal first
   const amount0 = convertTokenToDecimal(totalAmount0BI, token0.decimals)
   const amount1 = convertTokenToDecimal(totalAmount1BI, token1.decimals)
-  const fee0 = convertTokenToDecimal(totalFee0BI, token0.decimals)
-  const fee1 = convertTokenToDecimal(totalFee1BI, token1.decimals)
+  const fee0Raw = convertTokenToDecimal(totalFee0BI, token0.decimals)
+  const fee1Raw = convertTokenToDecimal(totalFee1BI, token1.decimals)
 
-  // 2. Get absolute values (always positive) for volume tracking
+  // 2. Get absolute values (always positive) for volume and fee tracking
   const amount0Abs = amount0.lt(ZERO_BD) ? amount0.times(BigDecimal.fromString('-1')) : amount0
   const amount1Abs = amount1.lt(ZERO_BD) ? amount1.times(BigDecimal.fromString('-1')) : amount1
+  const fee0 = fee0Raw.lt(ZERO_BD) ? fee0Raw.times(BigDecimal.fromString('-1')) : fee0Raw
+  const fee1 = fee1Raw.lt(ZERO_BD) ? fee1Raw.times(BigDecimal.fromString('-1')) : fee1Raw
 
 
   // ─── 2. Refresh token prices FIRST so all USD calcs use current prices ───
@@ -194,8 +190,10 @@ export function handlePoolSwapHelper(
   // ─── 6. Volume & fee accumulators ───
   pool.volumeToken0 = pool.volumeToken0.plus(amount0Abs)
   pool.volumeToken1 = pool.volumeToken1.plus(amount1Abs)
+  pool.volumeUSD = pool.volumeUSD.plus(amountTotalUSDTracked)
   pool.collectedFeesToken0 = pool.collectedFeesToken0.plus(fee0)
   pool.collectedFeesToken1 = pool.collectedFeesToken1.plus(fee1)
+  pool.feesUSD = pool.feesUSD.plus(feesUSD)
   pool.txCount = pool.txCount.plus(ONE_BI)
 
   // ─── 7. PoolManager aggregates ───
@@ -203,6 +201,10 @@ export function handlePoolSwapHelper(
   poolManager.totalValueLockedUSD = poolManager.totalValueLockedUSD
     .minus(oldPoolTVLUSD)
     .plus(pool.totalValueLockedUSD)
+
+  poolManager.totalVolumeUSD = poolManager.totalVolumeUSD.plus(amountTotalUSDTracked)
+  poolManager.totalFeesUSD = poolManager.totalFeesUSD.plus(feesUSD)
+
 
   // ─── 8. Token aggregates ───
   token0.volume = token0.volume.plus(amount0Abs)

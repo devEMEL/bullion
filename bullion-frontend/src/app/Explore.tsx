@@ -82,8 +82,10 @@ function LaunchBlock({ launch, index }: { launch: EnrichedLaunch; index: number 
               <span className="w-1.5 h-1.5 rounded-full bg-[#5865F2] animate-blink" />
               {countdown(Number(launch.fairLaunchEndsAt))}
             </span>
-          ) : (
+          ) : launch.poolInitialized ? (
             <span className="chip shrink-0">Trading</span>
+          ) : (
+            <span className="chip shrink-0 !text-white/40 !border-white/[0.06]">Ended</span>
           )}
         </div>
 
@@ -128,7 +130,7 @@ function LaunchBlock({ launch, index }: { launch: EnrichedLaunch; index: number 
 
 export default function Explore() {
   const { launches, loading, error, refetch } = useLaunches();
-  const { volume24h, volumeAllTime, trades24h } = useVolume();
+  const { volume24h, volumeAllTime, trades24h, dexVolumeAllTime, dex24hVolume, feesAllTime } = useVolume();
   const [filter, setFilter] = useState<Filter>('all');
   const [sort, setSort] = useState<Sort>('new');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -182,62 +184,95 @@ export default function Explore() {
   return (
     <div className="min-h-screen">
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 md:py-8">
-        {/* Stats strip */}
-        <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-            <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
-              Total raised
-            </p>
-            <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5 truncate">
-              ${fmtNative(stats.totalRaised.toString())}
-            </p>
-            <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">
-              {CONTRACTS.nativeTokenSymbol}
-            </p>
+        {/* Stats strip — two groups */}
+        <div className="mb-8 flex flex-col gap-3">
+          {/* Fair Launch group */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#5865F2]/10 border border-[#5865F2]/20 text-[10px] font-bold uppercase tracking-[0.12em] text-[#5865F2]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5865F2] animate-pulse" />
+                Fair Launch
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
+                  Total raised
+                </p>
+                <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5 truncate">
+                  ${fmtNative(stats.totalRaised.toString())}
+                </p>
+                <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">
+                  {CONTRACTS.nativeTokenSymbol}
+                </p>
+              </div>
+              <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-[#5865F2]/20 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-[#5865F2]">
+                  Live now
+                </p>
+                <p className="text-[18px] md:text-[22px] font-extrabold text-[#5865F2] tabular-nums mt-1.5">
+                  {stats.live}
+                </p>
+                <p className="text-[11px] font-medium text-[#5865F2]/60 mt-1 hidden sm:block">
+                  Curves still open
+                </p>
+              </div>
+              <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
+                  Launches
+                </p>
+                <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5">
+                  {launches.length}
+                </p>
+                <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">
+                  Tokens deployed
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-            <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
-              24hr volume
-            </p>
-            <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5 truncate">
-              ${fmtNative(volume24h)}
-            </p>
-            <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">
-              {trades24h} trade{trades24h === 1 ? '' : 's'}
-            </p>
-          </div>
-          <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-            <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
-              Volume · all time
-            </p>
-            <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5 truncate">
-              ${fmtNative(volumeAllTime)}
-            </p>
-            <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">Since genesis</p>
-          </div>
-          <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-            <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-[#5865F2]">
-              Live now
-            </p>
-            <p className="text-[18px] md:text-[22px] font-extrabold text-[#5865F2] tabular-nums mt-1.5">
-              {stats.live}
-            </p>
-            <p className="text-[11px] font-medium text-[#5865F2]/60 mt-1 hidden sm:block">
-              Curves still open
-            </p>
-          </div>
-          <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] col-span-2 sm:col-span-1">
-            <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
-              Launches
-            </p>
-            <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5">
-              {launches.length}
-            </p>
-            <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">
-              Tokens deployed
-            </p>
+
+          {/* DEX group */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/10 text-[10px] font-bold uppercase tracking-[0.12em] text-white/50">
+                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                DEX
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
+                  24hr Volume
+                </p>
+                <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5 truncate">
+                  ${Number(dex24hVolume).toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">
+                  DEX swaps today
+                </p>
+              </div>
+              <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
+                  Volume · all time
+                </p>
+                <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5 truncate">
+                  ${Number(dexVolumeAllTime).toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">Since genesis</p>
+              </div>
+              <div className="bg-[#121624] rounded-[20px] px-4 py-4 md:px-5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-white/35">
+                  Fees · all time
+                </p>
+                <p className="text-[18px] md:text-[22px] font-extrabold text-white tabular-nums mt-1.5 truncate">
+                  ${Number(feesAllTime).toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-[11px] font-medium text-white/30 mt-1 hidden sm:block">Collected by LPs</p>
+              </div>
+            </div>
           </div>
         </div>
+
 
         {/* Filter bar */}
         <div

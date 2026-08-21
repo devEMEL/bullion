@@ -16,7 +16,7 @@ export default function TokenTransferPage() {
   const { sendTransactionAsync } = useSendTransaction();
   const publicClient = usePublicClient();
 
-  // Selection mode: 'chain_native' (ZKLTC on LitVM), 'protocol_native' (BZKLTC), or 'custom' (ERC20 address)
+  // Selection mode: 'chain_native' (ZKLTC on LitVM), 'protocol_native' (bUSDC), or 'custom' (ERC20 address)
   const [tokenType, setTokenType] = useState<'chain_native' | 'protocol_native' | 'custom'>('chain_native');
   const [customTokenAddress, setCustomTokenAddress] = useState('');
   const [recipientAddress, setRecipientAddress] = useState('');
@@ -54,7 +54,7 @@ export default function TokenTransferPage() {
   // Effective token symbol & decimals
   const tokenSymbol = useMemo(() => {
     if (tokenType === 'chain_native') return 'ZKLTC';
-    if (tokenType === 'protocol_native') return CONTRACTS.nativeTokenSymbol || 'BZKLTC';
+    if (tokenType === 'protocol_native') return CONTRACTS.nativeTokenSymbol || 'bUSDC';
     return (customSymbol as string) || 'TOKEN';
   }, [tokenType, customSymbol]);
 
@@ -242,7 +242,7 @@ export default function TokenTransferPage() {
           Token Transfer
         </h1>
         <p className="text-white/45 text-sm md:text-base leading-relaxed">
-          Send native chain assets (ZKLTC), protocol tokens (BZKLTC), or custom ERC-20 tokens directly to any address on Liteforge.
+          Send native chain assets (ZKLTC), protocol tokens (bUSDC), or custom ERC-20 tokens directly to any address on Liteforge.
         </p>
       </header>
 
@@ -286,7 +286,7 @@ export default function TokenTransferPage() {
                 }`}
               >
                 <Coins size={14} />
-                {CONTRACTS.nativeTokenSymbol || 'BZKLTC'}
+                {CONTRACTS.nativeTokenSymbol || 'bUSDC'}
               </button>
 
               <button
