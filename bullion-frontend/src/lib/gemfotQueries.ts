@@ -120,6 +120,68 @@ export const GET_VOLUME = /* GraphQL */ `
   }
 `;
 
+/**
+ * Top pools by all-time volume — same data source as TokenDetail's pool.volumeUSD.
+ */
+export const GET_TOP_VOLUME_POOLS = /* GraphQL */ `
+  query GetTopVolumePools {
+    pools(
+      first: 20
+      orderBy: volumeUSD
+      orderDirection: desc
+      where: { volumeUSD_gt: "0" }
+    ) {
+      id
+      volumeUSD
+      feesUSD
+      sqrtPrice
+      token0 { id symbol name decimals }
+      token1 { id symbol name decimals }
+      poolDayData(first: 1, orderBy: date, orderDirection: desc) {
+        volumeUSD
+        date
+      }
+    }
+  }
+`;
+
+/**
+ * Top pools by all-time fees — same data source as TokenDetail's pool.feesUSD.
+ */
+export const GET_TOP_FEES_POOLS = /* GraphQL */ `
+  query GetTopFeesPools {
+    pools(
+      first: 20
+      orderBy: feesUSD
+      orderDirection: desc
+      where: { feesUSD_gt: "0" }
+    ) {
+      id
+      feesUSD
+      sqrtPrice
+      token0 { id symbol name decimals }
+      token1 { id symbol name decimals }
+    }
+  }
+`;
+
+/** Batch-fetch launch + pool data for a list of memecoin addresses (for market cap calc). */
+export const GET_LAUNCHES_BY_MEMECOINS = /* GraphQL */ `
+  query GetLaunchesByMemecoins($addrs: [Bytes!]!) {
+    launches(where: { memecoin_in: $addrs }, first: 50) {
+      memecoin
+      totalSupply
+      initialTokenFairLaunch
+      pool {
+        id
+        sqrtPrice
+        token0 { id symbol decimals }
+        token1 { id symbol decimals }
+      }
+    }
+  }
+`;
+
 /** Aggregate DEX totals from the poolManager singleton. */
 export const GET_GLOBAL_STATS = /* GraphQL */ `
   query GetGlobalStats {

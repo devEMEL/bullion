@@ -10,10 +10,14 @@ import {
   BarChart3,
   Copy,
   Check,
+  TrendingUp,
+  Award,
+  ExternalLink,
 } from 'lucide-react';
 
 import { useLaunches, type EnrichedLaunch } from '@/hooks/useLaunches';
 import { useVolume } from '@/hooks/useVolume';
+import { useTopTokens, type TopVolumeToken, type TopEarningToken } from '@/hooks/useTopPools';
 import { CONTRACTS } from '@/config/networks';
 import { calcExpectedRaise, countdown, fmtNative, progressPct, timeAgo } from '@/lib/format';
 
@@ -128,9 +132,117 @@ function LaunchBlock({ launch, index }: { launch: EnrichedLaunch; index: number 
   );
 }
 
+function fmtUSD(value: string | number) {
+  const n = Number(value);
+  if (isNaN(n)) return '$0';
+  return '$' + n.toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 2 });
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  const gold = rank === 1 ? 'text-yellow-400 border-yellow-400/40 bg-yellow-400/10' : '';
+  const silver = rank === 2 ? 'text-slate-300 border-slate-300/40 bg-slate-300/10' : '';
+  const bronze = rank === 3 ? 'text-amber-600 border-amber-600/40 bg-amber-600/10' : '';
+  const rest = rank > 3 ? 'text-white/30 border-white/10 bg-white/5' : '';
+  return (
+    <span
+      className={`inline-flex items-center justify-center w-6 h-6 rounded-full border text-[11px] font-black shrink-0 ${
+        gold || silver || bronze || rest
+      }`}
+    >
+      {rank}
+    </span>
+  );
+}
+
+function TokenAvatar({ imageUrl, symbol }: { imageUrl: string; symbol: string }) {
+  return imageUrl ? (
+    <img
+      src={imageUrl}
+      alt={symbol}
+      className="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0"
+      loading="lazy"
+    />
+  ) : (
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5865F2]/30 to-[#3B82F6]/20 border border-white/10 flex items-center justify-center shrink-0">
+      <span className="text-[11px] font-black text-[#5865F2]">{symbol.slice(0, 2).toUpperCase()}</span>
+    </div>
+  );
+}
+
+function TopVolumeTokenRow({
+  token,
+  rank,
+  imageUrl,
+}: {
+  token: TopVolumeToken;
+  rank: number;
+  imageUrl: string;
+}) {
+  return (
+    <Link
+      to={`/token/${token.id}`}
+      className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/[0.04] transition-colors"
+    >
+      <RankBadge rank={rank} />
+      <TokenAvatar imageUrl={imageUrl} symbol={token.symbol} />
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-bold text-white truncate">{token.symbol}</p>
+        <p className="text-[11px] text-white/35 mt-0.5">
+          MCap {token.marketCapUSD > 0 ? fmtUSD(token.marketCapUSD) : '—'}
+        </p>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="text-[14px] font-bold text-white tabular-nums">{fmtUSD(token.volumeUSD)}</p>
+        <p className="text-[11px] text-white/35 mt-0.5">24h {token.vol24h ? fmtUSD(token.vol24h) : '—'}</p>
+      </div>
+      <ExternalLink size={13} className="text-white/20 group-hover:text-white/50 transition-colors shrink-0" />
+    </Link>
+  );
+}
+
+
+function TopEarningTokenRow({
+  token,
+  rank,
+  imageUrl,
+}: {
+  token: TopEarningToken;
+  rank: number;
+  imageUrl: string;
+}) {
+  return (
+    <Link
+      to={`/token/${token.id}`}
+      className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/[0.04] transition-colors"
+    >
+      <RankBadge rank={rank} />
+      <TokenAvatar imageUrl={imageUrl} symbol={token.symbol} />
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-bold text-white truncate">{token.symbol}</p>
+        <p className="text-[11px] text-white/35 mt-0.5 truncate">{token.name}</p>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="text-[14px] font-bold text-amber-400 tabular-nums">{fmtUSD(token.feesUSD)}</p>
+        <p className="text-[11px] text-white/35 mt-0.5">Total fees</p>
+      </div>
+      <ExternalLink size={13} className="text-white/20 group-hover:text-white/50 transition-colors shrink-0" />
+    </Link>
+  );
+}
+
 export default function Explore() {
   const { launches, loading, error, refetch } = useLaunches();
   const { volume24h, volumeAllTime, trades24h, dexVolumeAllTime, dex24hVolume, feesAllTime } = useVolume();
+  const { volumeTokens, earningTokens, loading: topLoading } = useTopTokens();
+
+  // Build a quick address→imageUrl map from already-loaded launches
+  const launchImageMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const l of launches) {
+      if (l.memecoin && l.imageUrl) map.set(l.memecoin.toLowerCase(), l.imageUrl);
+    }
+    return map;
+  }, [launches]);
   const [filter, setFilter] = useState<Filter>('all');
   const [sort, setSort] = useState<Sort>('new');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -273,6 +385,66 @@ export default function Explore() {
           </div>
         </div>
 
+        {/* Top Volume Pools + Top Earning Tokens */}
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Top Volume Tokens */}
+          <div className="bg-[#121624] rounded-[20px] border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-white/[0.06]">
+              <div className="w-7 h-7 rounded-lg bg-[#5865F2]/15 flex items-center justify-center">
+                <TrendingUp size={14} className="text-[#5865F2]" />
+              </div>
+              <span className="text-[13px] font-bold text-white">Top Volume Tokens</span>
+              <span className="ml-auto text-[11px] font-semibold text-white/30">All time</span>
+            </div>
+            {topLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 size={16} className="animate-spin text-[#5865F2]" />
+              </div>
+            ) : volumeTokens.length === 0 ? (
+              <p className="text-[13px] text-white/30 text-center py-10">No token data yet</p>
+            ) : (
+              <div className="py-1">
+                {volumeTokens.map((token, i) => (
+                  <TopVolumeTokenRow
+                    key={token.id}
+                    token={token}
+                    rank={i + 1}
+                    imageUrl={launchImageMap.get(token.id.toLowerCase()) ?? ''}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Top Earning Tokens */}
+          <div className="bg-[#121624] rounded-[20px] border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-white/[0.06]">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+                <Award size={14} className="text-amber-400" />
+              </div>
+              <span className="text-[13px] font-bold text-white">Top Earning Tokens</span>
+              <span className="ml-auto text-[11px] font-semibold text-white/30">By fees</span>
+            </div>
+            {topLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 size={16} className="animate-spin text-amber-400" />
+              </div>
+            ) : earningTokens.length === 0 ? (
+              <p className="text-[13px] text-white/30 text-center py-10">No token data yet</p>
+            ) : (
+              <div className="py-1">
+                {earningTokens.map((token, i) => (
+                  <TopEarningTokenRow
+                    key={token.id}
+                    token={token}
+                    rank={i + 1}
+                    imageUrl={launchImageMap.get(token.id.toLowerCase()) ?? ''}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Filter bar */}
         <div
