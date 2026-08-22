@@ -5,9 +5,15 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
-import {IPositionDescriptor} from "@uniswap/v4-periphery/src/interfaces/IPositionDescriptor.sol";
-import {PositionDescriptor} from "@uniswap/v4-periphery/src/PositionDescriptor.sol";
+import {
+    IAllowanceTransfer
+} from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import {
+    IPositionDescriptor
+} from "@uniswap/v4-periphery/src/interfaces/IPositionDescriptor.sol";
+import {
+    PositionDescriptor
+} from "@uniswap/v4-periphery/src/PositionDescriptor.sol";
 import {PositionManager} from "@uniswap/v4-periphery/src/PositionManager.sol";
 import {IWETH9} from "@uniswap/v4-periphery/src/interfaces/external/IWETH9.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
@@ -29,7 +35,7 @@ contract DeployPositionManager is Script {
         console.log("WETH deployed at:", address(weth));
 
         // 2. Deploy PositionDescriptor
-        bytes32 nativeCurrencyLabel = bytes32("BZKLTC");
+        bytes32 nativeCurrencyLabel = bytes32("BUSDC");
         PositionDescriptor descriptor = new PositionDescriptor(
             IPoolManager(poolManagerAddr),
             nativeToken,

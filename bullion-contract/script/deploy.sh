@@ -135,8 +135,8 @@ deploy() {
 # ---------------------------------------------------------------------------- #
 
 # 0. DEX & Foundation Infrastructure
-deploy BZKLTC DeployBZKLTC.s.sol:DeployBZKLTC
-export NATIVE_TOKEN="${BZKLTC}"
+deploy BUSDC DeployBUSDC.s.sol:DeployBUSDC
+export NATIVE_TOKEN="${BUSDC}"
 
 deploy FAUCET_ADDRESS DeployFaucet.s.sol:DeployFaucet
 
@@ -265,7 +265,7 @@ cat <<EOF
 Network                        : ${NETWORK}
 Deployer                       : ${DEPLOYER}
 
-BZKLTC (Native Token)          : ${BZKLTC}
+BUSDC (Native Token)          : ${BUSDC}
 Faucet                         : ${FAUCET_ADDRESS}
 Permit2                        : ${PERMIT2_ADDRESS}
 PoolManager                    : ${POOL_MANAGER}
@@ -344,8 +344,8 @@ if [[ -f "${ENV_FILE}" ]]; then
         fi
     }
 
-    update_env_var "NATIVE_TOKEN" "${BZKLTC}"
-    update_env_var "BZKLTC" "${BZKLTC}"
+    update_env_var "NATIVE_TOKEN" "${BUSDC}"
+    update_env_var "BUSDC" "${BUSDC}"
     update_env_var "FAUCET_ADDRESS" "${FAUCET_ADDRESS}"
     update_env_var "PERMIT2_ADDRESS" "${PERMIT2_ADDRESS}"
     update_env_var "POOL_MANAGER" "${POOL_MANAGER}"
@@ -386,7 +386,7 @@ FRONTEND_CONSTANTS="$(dirname "$0")/../../bullion-frontend/src/lib/constants.ts"
 
 if [[ -f "${FRONTEND_NETWORKS}" ]]; then
     echo "==> Updating ${FRONTEND_NETWORKS} ..."
-    sed -i "s|nativeToken: '0x.*'|nativeToken: '${BZKLTC}'|" "${FRONTEND_NETWORKS}"
+    sed -i "s|nativeToken: '0x.*'|nativeToken: '${BUSDC}'|" "${FRONTEND_NETWORKS}"
     sed -i "s|poolManager: '0x.*'|poolManager: '${POOL_MANAGER}'|" "${FRONTEND_NETWORKS}"
     sed -i "s|positionManager: '0x.*'|positionManager: '${POSITION_MANAGER_ADDRESS}'|" "${FRONTEND_NETWORKS}"
     sed -i "s|stateView: '0x.*'|stateView: '${STATEVIEW_ADDRESS}'|" "${FRONTEND_NETWORKS}"
@@ -409,7 +409,7 @@ fi
 
 if [[ -f "${FRONTEND_CONSTANTS}" ]]; then
     echo "==> Updating ${FRONTEND_CONSTANTS} ..."
-    sed -i "s|export const USDC_ADDRESS = \"0x.*\"|export const USDC_ADDRESS = \"${BZKLTC}\"|" "${FRONTEND_CONSTANTS}"
+    sed -i "s|export const USDC_ADDRESS = \"0x.*\"|export const USDC_ADDRESS = \"${BUSDC}\"|" "${FRONTEND_CONSTANTS}"
     sed -i "s|export const POOLMANAGER_ADDRESS = \"0x.*\"|export const POOLMANAGER_ADDRESS = \"${POOL_MANAGER}\"|" "${FRONTEND_CONSTANTS}"
     sed -i "s|export const V4_QUOTER_ADDRESS = \"0x.*\"|export const V4_QUOTER_ADDRESS = \"${V4_QUOTER_ADDRESS}\"|" "${FRONTEND_CONSTANTS}"
     sed -i "s|export const PERMIT2_ADDRESS = \"0x.*\"|export const PERMIT2_ADDRESS = \"${PERMIT2_ADDRESS}\"|" "${FRONTEND_CONSTANTS}"

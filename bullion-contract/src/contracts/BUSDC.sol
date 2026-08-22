@@ -3,10 +3,10 @@ pragma solidity >=0.8.26 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract BZKLTC is ERC20 {
+contract BUSDC is ERC20 {
     uint8 private _decimals;
     uint256 public immutable maxSupply;
-    
+
     constructor(
         string memory name,
         string memory symbol,
@@ -28,7 +28,11 @@ contract BZKLTC is ERC20 {
         _mint(to, amount);
     }
 
-    function _update(address from, address to, uint256 value) internal override {
+    function _update(
+        address from,
+        address to,
+        uint256 value
+    ) internal override {
         if (from == address(0)) {
             require(totalSupply() == 0, "Minting is disabled");
         }
