@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
+import { formatUnits, parseUnits } from 'viem';
 import { ImagePlus, X, Loader2, Check, AlertTriangle, ExternalLink } from 'lucide-react';
 import { useLaunchToken, type LaunchFormValues } from '@/hooks/useLaunchToken';
 import { activeNetwork, CONTRACTS, explorerAddress, explorerToken, explorerTx } from '@/config/networks';
 import { shortAddress } from '@/lib/format';
+import { nativeInForTokens } from '@/lib/fairLaunchQuote';
 
 const DURATION_UNITS = [
   { key: 'days', label: 'D', seconds: 24 * 60 * 60 },
@@ -34,6 +36,9 @@ function durationToSeconds(boxes: DurationBoxes): number {
 }
 
 const PRESET_MULTIPLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+/** Global swap fee (bps) charged on fair-launch buys, incl. creator premines (100 = 1%). */
+const PREMINE_SWAP_FEE_BPS = 100;
 
 const initialForm: LaunchFormValues = {
   name: '',
@@ -198,6 +203,63 @@ export default function LaunchToken() {
       return null;
     return (mcap * (multiple + 1)) / (2 * multiple);
   }, [form.targetMarketCap, form.multiple]);
+
+  // Premine token amount: % of the fair-launch supply, same math as useLaunchToken.
+  const premineWei = useMemo(() => {
+    if (!(form.preminePercent > 0)) return null;
+    try {
+      const totalSupplyWei = parseUnits(form.totalSupply || '0', 18);
+      if (totalSupplyWei <= 0n) return null;
+
+      const initialFairLaunchWei =
+        (totalSupplyWei * BigInt(Math.round(form.fairLaunchPercent * 100))) / 10_000n;
+      if (initialFairLaunchWei <= 0n) return null;
+
+      const premine =
+        (initialFairLaunchWei * BigInt(Math.round(form.preminePercent * 100))) / 10_000n;
+      return premine > 0n ? premine : null;
+    } catch {
+      return null;
+    }
+  }, [form.preminePercent, form.fairLaunchPercent, form.totalSupply]);
+
+  // Native token the creator pays for their premine: curve cost from position
+  // zero plus the fair-launch swap fee, mirroring GemFotManager.buyFairLaunch.
+  const premineCostNative = useMemo(() => {
+    if (premineWei === null) return null;
+    try {
+      const mcapWei = parseUnits(form.targetMarketCap || '0', CONTRACTS.nativeTokenDecimals);
+      const nativeIn = nativeInForTokens(
+        {
+          targetMarketCap: mcapWei.toString(),
+          initialTokenFairLaunch:
+            ((parseUnits(form.totalSupply || '0', 18) *
+              BigInt(Math.round(form.fairLaunchPercent * 100))) /
+              10_000n).toString(),
+          multiple: String(form.multiple),
+        },
+        premineWei
+      );
+      return nativeIn + (nativeIn * BigInt(PREMINE_SWAP_FEE_BPS)) / 10_000n;
+    } catch {
+      return null;
+    }
+  }, [premineWei, form.totalSupply, form.fairLaunchPercent, form.targetMarketCap, form.multiple]);
+
+  const premineAmountLabel =
+    premineWei !== null && premineWei > 0n
+      ? Number(formatUnits(premineWei, 18)).toLocaleString(undefined, { maximumFractionDigits: 0 })
+      : null;
+
+  const premineCostLabel =
+    premineCostNative !== null && premineCostNative > 0n
+      ? Number(formatUnits(premineCostNative, CONTRACTS.nativeTokenDecimals)).toLocaleString(
+          undefined,
+          { maximumFractionDigits: 6 }
+        )
+      : null;
+
+  const premineTicker = form.symbol.trim().toUpperCase() || 'tokens';
 
   const valid = Object.keys(errors).length === 0;
 
@@ -393,6 +455,41 @@ export default function LaunchToken() {
                   </span>
                 </div>
               </Field>
+              <Field label="Premine" hint="% of fair launch supply">
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.preminePercent}
+                    onChange={(e) =>
+                      set('preminePercent', Number(e.target.value.replace(/[^0-9.]/g, '')))
+                    }
+                    placeholder="0"
+                    className="input-field num w-full h-12 pl-4 pr-10 text-[15px]"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#5865F2]">
+                    %
+                  </span>
+                </div>
+                {premineAmountLabel && (
+                  <p className="mt-2 text-[12px] text-white/40 flex items-baseline justify-between">
+                    <span>Premine amount</span>
+                    <span className="font-bold text-white/80 tabular-nums">
+                      {premineAmountLabel}{' '}
+                      <span className="text-white/30 font-medium">{premineTicker}</span>
+                    </span>
+                  </p>
+                )}
+                {premineCostLabel && (
+                  <p className="mt-2 text-[12px] text-white/40 flex items-baseline justify-between">
+                    <span>You send</span>
+                    <span className="font-bold text-[#5865F2]">
+                      ≈ {premineCostLabel}{' '}
+                      <span className="text-white/30 font-medium">{CONTRACTS.nativeTokenSymbol}</span>
+                    </span>
+                  </p>
+                )}
+              </Field>
             </div>
           </Section>
 
@@ -537,6 +634,14 @@ export default function LaunchToken() {
                 ['Ticker', form.symbol],
                 ['Total Supply', Number(form.totalSupply).toLocaleString()],
                 ['Fair Launch Supply', `${form.fairLaunchPercent}%`],
+                [
+                  'Premine',
+                  form.preminePercent > 0
+                    ? `${premineAmountLabel ? `${premineAmountLabel} ${premineTicker} ` : ''}(${form.preminePercent}%${
+                        premineCostLabel ? `, ≈ ${premineCostLabel} ${CONTRACTS.nativeTokenSymbol}` : ''
+                      })`
+                    : 'None',
+                ],
                 ['Fair Launch Duration', formatDuration(form.fairLaunchDuration)],
                 [
                   'Launch Start',

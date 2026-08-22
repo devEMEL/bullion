@@ -77,6 +77,43 @@ export function calculateBuyAmount(
   return mulDiv(maxSupply, sqrtDiscriminant - T, kNumerator);
 }
 
+/**
+ * Smallest `nativeIn` that buys at least `tokensWanted` starting from position
+ * zero on the curve (e.g. a creator premine bought right after launch).
+ *
+ * Rather than analytically inverting the curve (fragile with Solidity floor
+ * math), this binary-searches `calculateBuyAmount` — which is monotonic in
+ * `nativeIn` — so the result is bit-for-bit the minimum spend computed by the
+ * contract for the same purchase.
+ */
+export function nativeInForTokens(
+  params: Pick<FairLaunchQuoteParams, 'targetMarketCap' | 'initialTokenFairLaunch' | 'multiple'>,
+  tokensWanted: bigint
+): bigint {
+  const M = BigInt(params.targetMarketCap || '0');
+  const S = BigInt(params.initialTokenFairLaunch || '0');
+  const multiple = BigInt(params.multiple || '1');
+  if (M <= 0n || S <= 0n || multiple <= 0n || tokensWanted <= 0n) return 0n;
+
+  const target = tokensWanted >= S ? S : tokensWanted;
+  const p0 = computeP0(M, S, multiple);
+
+  // Upper bound: the full raise needed to sell out the entire allocation,
+  // M * (multiple + 1) / (2 * multiple), padded for floor-rounding slack.
+  let low = 0n;
+  let high = (M * (multiple + 1n)) / (2n * multiple) + ONE_E_18;
+
+  while (low < high) {
+    const mid = (low + high) / 2n;
+    if (calculateBuyAmount(M, S, p0, 0n, mid) >= target) {
+      high = mid;
+    } else {
+      low = mid + 1n;
+    }
+  }
+  return low;
+}
+
 export interface FairLaunchQuoteParams {
   targetMarketCap: string;
   initialTokenFairLaunch: string;

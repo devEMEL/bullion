@@ -18,7 +18,9 @@ import {StoreKeys} from "@gemfot/types/StoreKeys.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
+import {
+    IUnlockCallback
+} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
 import {Hooks, IHooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {SafeCast} from "@uniswap/v4-core/src/libraries/SafeCast.sol";
 import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
@@ -32,10 +34,14 @@ import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
-import {BaseHook} from "v4-hooks-public/lib/v4-periphery/src/utils/BaseHook.sol";
-import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import {
+    BaseHook
+} from "v4-hooks-public/lib/v4-periphery/src/utils/BaseHook.sol";
+import {
+    ModifyLiquidityParams,
+    SwapParams
+} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {LinearBondingCurve} from "@gemfot/libraries/LinearBondingCurve.sol";
-
 
 /**
  * The GemFotManager is a Uniswap V4 hook that controls the user journey from token creation,
@@ -49,7 +55,13 @@ import {LinearBondingCurve} from "@gemfot/libraries/LinearBondingCurve.sol";
  * within comments using square brackets where possible.
  */
 
-contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys, IUnlockCallback {
+contract GemFotManager is
+    BaseHook,
+    FeeDistributor,
+    InternalSwapPool,
+    StoreKeys,
+    IUnlockCallback
+{
     using BeforeSwapDeltaLibrary for BeforeSwapDelta;
     using CurrencySettler for Currency;
     using PoolIdLibrary for PoolKey;
@@ -65,7 +77,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
     error TokenNotLaunched(uint _launchesAt);
     error UnknownPool(PoolId _poolId);
     error UnknownUnlockAction();
-
 
     /// Emitted when a Launch pool is created
     event PoolCreated(
@@ -107,7 +118,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         uint24 _swapFee,
         uint128 _liquidity
     );
-
 
     /// Emitted when unused premine is forfeited (deadline / sold out) and tstore cleared
     event PremineBurned(PoolId indexed _poolId, uint _premineAmount);
@@ -162,6 +172,7 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      * @custom:member totalSupply Total supply of tokens
      * @custom:member usdcMarketCap The target market cap of the token
      * @custom:member multiple Multiple of the usdcMarketCap that will be raised (e.g x7 - say first buyer pays $1 and second buyer pays $7)
+     * @custom:member nativeIn The amount of native currency (USDC) being spent on the bonding curve for premine
      */
     struct LaunchParams {
         string name;
@@ -173,17 +184,18 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         address creator;
         uint24 creatorFeeAllocation;
         uint launchAt;
-
         uint totalSupply;
         uint usdcMarketCap;
         uint8 multiple;
+        uint256 nativeIn;
     }
 
     /// The minimum amount before a distribution is triggered
     uint public constant MIN_DISTRIBUTE_THRESHOLD = 100 * 10 ** 6; // USDC
 
     /// The `dEaD` address to burn our unsold memecoins to
-    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address public constant BURN_ADDRESS =
+        0x000000000000000000000000000000000000dEaD;
 
     /// The contract that will be used for launching tokens
     ILaunch public launchContract;
@@ -197,7 +209,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
     // State: the one contract trusted to trigger creator premine buys
     address public premineContract;
 
-
     /// Store the address that will collect protocol fees
     address internal protocolFeeRecipient;
 
@@ -206,7 +217,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
 
     /// The contract that handles the FairLaunch flow
     FairLaunch public fairLaunch;
-
 
     /// The contract that handles the token Treasury actions
     TreasuryActionManager public actionManager;
@@ -229,7 +239,12 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         ConstructorParams memory params
     )
         BaseHook(params.poolManager)
-        FeeDistributor(params.nativeToken, params.feeDistribution, params.protocolOwner, params.feeEscrow)
+        FeeDistributor(
+            params.nativeToken,
+            params.feeDistribution,
+            params.protocolOwner,
+            params.feeEscrow
+        )
     {
         // Set our contract references
         initialPrice = params.initialPrice;
@@ -268,7 +283,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
     function launch(
         LaunchParams calldata _params
     ) external payable returns (address memecoin_) {
-
         uint tokenId;
         address payable memecoinTreasury;
 
@@ -280,24 +294,32 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
 
         // Create our Uniswap pool and store the pool key for lookups
         PoolKey memory _poolKey = PoolKey({
-            currency0: Currency.wrap(!currencyFlipped ? nativeToken : memecoin_),
+            currency0: Currency.wrap(
+                !currencyFlipped ? nativeToken : memecoin_
+            ),
             currency1: Currency.wrap(currencyFlipped ? nativeToken : memecoin_),
             fee: 0,
             tickSpacing: 60,
             hooks: IHooks(address(this))
         }); // use this to reconstruct poolkey in our indexer
 
-
-
         // Initialize the {MemecoinTreasury} with `PoolKey`
-        MemecoinTreasury(memecoinTreasury)
-            .initialize(payable(address(this)), address(actionManager), nativeToken, _poolKey);
+        MemecoinTreasury(memecoinTreasury).initialize(
+            payable(address(this)),
+            address(actionManager),
+            nativeToken,
+            _poolKey
+        );
 
         // Set the PoolKey to storage
         _poolKeys[memecoin_] = _poolKey;
         PoolId poolId = _poolKey.toId();
 
-        uint p0 = LinearBondingCurve.computeP0(_params.usdcMarketCap, _params.initialTokenFairLaunch, _params.multiple);
+        uint p0 = LinearBondingCurve.computeP0(
+            _params.usdcMarketCap,
+            _params.initialTokenFairLaunch,
+            _params.multiple
+        );
 
         // If we have a non-zero creator fee allocation, then we need to update our creator's
         // fee allocation.
@@ -325,7 +347,9 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
 
         if (_params.premineAmount != 0) {
             int premineAmount = _params.premineAmount.toInt256();
-            assembly { tstore(poolId, premineAmount) }
+            assembly {
+                tstore(poolId, premineAmount)
+            }
         }
 
         /**
@@ -340,10 +364,12 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         // Regardless of having a fair launch, we need to call `createPosition` as this
         // instantiates our storage struct that is required for when the position is closed
         // and the tokens are moved to a Uniswap V4 liquidity position.
-           
+
         fairLaunch.createPosition({
             _poolId: poolId,
-            _launchesAt: _params.launchAt > block.timestamp ? _params.launchAt : block.timestamp,
+            _launchesAt: _params.launchAt > block.timestamp
+                ? _params.launchAt
+                : block.timestamp,
             _initialTokenFairLaunch: _params.initialTokenFairLaunch,
             _fairLaunchDuration: _params.fairLaunchDuration,
             _targetMarketCap: _params.usdcMarketCap,
@@ -365,22 +391,34 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
 
         // rewrite since we are taking USDC instead of ETH
         if (launchFee != 0) {
-            uint allowance = IERC20(nativeToken).allowance(msg.sender, address(this));
+            uint allowance = IERC20(nativeToken).allowance(
+                msg.sender,
+                address(this)
+            );
             if (allowance < launchFee) {
                 revert InsufficientLaunchFee(allowance, launchFee);
             }
 
             // Pay the launching fee to our fee recipient
-            nativeToken.safeTransferFrom(msg.sender, protocolFeeRecipient, launchFee);
+            nativeToken.safeTransferFrom(
+                msg.sender,
+                protocolFeeRecipient,
+                launchFee
+            );
         }
 
-
         // Notify our subscribed contracts
-        notifier.notifySubscribers(poolId, IHooks.afterInitialize.selector, abi.encode(tokenId, _params)); // this should trigger both Indexer and Premine subscribers 
- 
+        notifier.notifySubscribers(
+            poolId,
+            IHooks.afterInitialize.selector,
+            abi.encode(tokenId, _params)
+        );
+        notifier.notifySubscribers(
+            poolId,
+            IHooks.afterInitialize.selector,
+            abi.encode(tokenId, _params, _params.nativeIn)
+        );
     }
-
-    
 
     /**
      * Returns the PoolKey mapped to the token address. If none is set then a zero value
@@ -392,9 +430,7 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      *
      * @return The corresponding {PoolKey} for the token
      */
-    function poolKey(
-        address _token
-    ) external view returns (PoolKey memory) {
+    function poolKey(address _token) external view returns (PoolKey memory) {
         return _poolKeys[_token];
     }
 
@@ -407,7 +443,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         return initialPrice.getLaunchingFee();
     }
 
-
     /**
      * Defines the Uniswap V4 hooks that are used by our implementation. This will determine
      * the address that our contract **must** be deployed to for Uniswap V4. This address suffix
@@ -415,23 +450,29 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      *
      * @dev 1011 1111 0111 00 == 2FDC
      */
-    function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
-        return Hooks.Permissions({
-            beforeInitialize: true, // Prevent initialize
-            afterInitialize: false,
-            beforeAddLiquidity: true, // [FairLaunch], [InternalSwapPool]
-            afterAddLiquidity: true, // [EventTracking]
-            beforeRemoveLiquidity: true, // FairLaunch], [InternalSwapPool]
-            afterRemoveLiquidity: true, // [EventTracking]
-            beforeSwap: true, // FairLaunch], [InternalSwapPool]
-            afterSwap: true, // [FeeDistributor], [InternalSwapPool], [BidWall], [EventTracking]
-            beforeDonate: false,
-            afterDonate: true, // [EventTracking]
-            beforeSwapReturnDelta: true, // [InternalSwapPool]
-            afterSwapReturnDelta: true, // [FeeDistributor]
-            afterAddLiquidityReturnDelta: false,
-            afterRemoveLiquidityReturnDelta: false
-        });
+    function getHookPermissions()
+        public
+        pure
+        override
+        returns (Hooks.Permissions memory)
+    {
+        return
+            Hooks.Permissions({
+                beforeInitialize: true, // Prevent initialize
+                afterInitialize: false,
+                beforeAddLiquidity: true, // [FairLaunch], [InternalSwapPool]
+                afterAddLiquidity: true, // [EventTracking]
+                beforeRemoveLiquidity: true, // FairLaunch], [InternalSwapPool]
+                afterRemoveLiquidity: true, // [EventTracking]
+                beforeSwap: true, // FairLaunch], [InternalSwapPool]
+                afterSwap: true, // [FeeDistributor], [InternalSwapPool], [BidWall], [EventTracking]
+                beforeDonate: false,
+                afterDonate: true, // [EventTracking]
+                beforeSwapReturnDelta: true, // [InternalSwapPool]
+                afterSwapReturnDelta: true, // [FeeDistributor]
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
+            });
     }
 
     /**
@@ -448,15 +489,12 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         PoolKey calldata _key,
         ModifyLiquidityParams calldata,
         bytes calldata
-    ) internal view override returns (
-        bytes4 selector_
-    ) {
+    ) internal view override returns (bytes4 selector_) {
         // [FL] If in fair launch window, we need to prevent liquidity being added
         _canModifyLiquidity(_key.toId(), _sender);
 
         selector_ = IHooks.beforeAddLiquidity.selector;
     }
-
 
     /**
      * Once a liquidity has been added, we emit our price update event.
@@ -476,14 +514,15 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         BalanceDelta _delta,
         BalanceDelta _feesAccrued,
         bytes calldata
-    ) internal override returns (
-        bytes4 selector_,
-        BalanceDelta
-    ) {
+    ) internal override returns (bytes4 selector_, BalanceDelta) {
         selector_ = IHooks.afterAddLiquidity.selector;
 
         // Emit our pool state update to listeners
-        _emitPoolStateUpdate(_key.toId(), selector_, abi.encode(_sender, _delta, _feesAccrued));
+        _emitPoolStateUpdate(
+            _key.toId(),
+            selector_,
+            abi.encode(_sender, _delta, _feesAccrued)
+        );
     }
 
     /**
@@ -499,9 +538,7 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         PoolKey calldata _key,
         ModifyLiquidityParams calldata,
         bytes calldata
-    ) internal view override returns (
-        bytes4 selector_
-    ) {
+    ) internal view override returns (bytes4 selector_) {
         // [FL] If in fair launch window, we need to prevent liquidity being removed
         _canModifyLiquidity(_key.toId(), _sender);
 
@@ -530,7 +567,11 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         selector_ = IHooks.afterRemoveLiquidity.selector;
 
         // Emit our pool state update to listeners
-        _emitPoolStateUpdate(_key.toId(), selector_, abi.encode(_sender, _delta, _feesAccrued));
+        _emitPoolStateUpdate(
+            _key.toId(),
+            selector_,
+            abi.encode(_sender, _delta, _feesAccrued)
+        );
     }
 
     /**
@@ -553,11 +594,12 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         selector_ = IHooks.afterDonate.selector;
 
         // Emit our pool state update to listeners
-        _emitPoolStateUpdate(_key.toId(), selector_, abi.encode(_sender, _amount0, _amount1));
+        _emitPoolStateUpdate(
+            _key.toId(),
+            selector_,
+            abi.encode(_sender, _amount0, _amount1)
+        );
     }
-
-
-
 
     /**
      * If in fair launch window, we need to prevent liquidity being added. We can, however, modify
@@ -566,7 +608,10 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      * @param _poolId The PoolId having the liquidity modified
      * @param _sender The address that is trying to modify liquidity
      */
-    function _canModifyLiquidity(PoolId _poolId, address _sender) internal view {
+    function _canModifyLiquidity(
+        PoolId _poolId,
+        address _sender
+    ) internal view {
         // Check our valid addresses
         if (_sender == address(bidWall) || _sender == address(fairLaunch)) {
             return;
@@ -580,8 +625,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         // All other scenarios will result in revert
         revert FairLaunch.CannotModifyLiquidityDuringFairLaunch();
     }
-
-
 
     /**
      * The hook called before the state of a pool is initialized. Prevents external contracts
@@ -597,7 +640,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
     ) internal override onlyPoolManager returns (bytes4) {
         revert CannotBeInitializedDirectly();
     }
-
 
     /**
      * [ISP] Fills first from fee-token inventory, then reduces the remaining swap amount.
@@ -621,11 +663,11 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         PoolKey calldata _key,
         SwapParams calldata _params,
         bytes calldata _hookData
-    ) internal override returns (
-        bytes4 selector_,
-        BeforeSwapDelta beforeSwapDelta_,
-        uint24
-    ) {
+    )
+        internal
+        override
+        returns (bytes4 selector_, BeforeSwapDelta beforeSwapDelta_, uint24)
+    {
         PoolId poolId = _key.toId();
         bool nativeIsZero = nativeToken == Currency.unwrap(_key.currency0);
 
@@ -633,7 +675,8 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         int amountRemaining = _params.amountSpecified;
 
         // Check if our fair launch period hasn't ended and already been processed
-        FairLaunch.FairLaunchInfo memory fairLaunchInfo = fairLaunch.fairLaunchInfo(poolId);
+        FairLaunch.FairLaunchInfo memory fairLaunchInfo = fairLaunch
+            .fairLaunchInfo(poolId);
 
         if (!fairLaunchInfo.closed) {
             revert("Fair launch must be closed before Uniswap swaps");
@@ -643,11 +686,17 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
          * [ISP] Fill first from fee-token inventory (e.g. -100 USDC with 10 USDC of fees → take 10 here).
          * Remaining amount is then passed to FairLaunch / Uniswap.
          */
-        (uint tokenIn, uint tokenOut) = _internalSwap(poolManager, _key, _params, nativeIsZero);
+        (uint tokenIn, uint tokenOut) = _internalSwap(
+            poolManager,
+            _key,
+            _params,
+            nativeIsZero
+        );
         if (tokenIn + tokenOut != 0) {
             // Update our hook delta to reduce the upcoming swap amount to show that we have
             // already spent some of the ETH and received some of the underlying ERC20.
-            BeforeSwapDelta internalBeforeSwapDelta = _params.amountSpecified >= 0
+            BeforeSwapDelta internalBeforeSwapDelta = _params.amountSpecified >=
+                0
                 ? toBeforeSwapDelta(-tokenOut.toInt128(), tokenIn.toInt128())
                 : toBeforeSwapDelta(tokenIn.toInt128(), -tokenOut.toInt128());
 
@@ -656,17 +705,28 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
              * rather than sending the full amount to the end user.
              */
             uint swapFee = _captureAndDepositFees(
-                _key, _params, _sender, internalBeforeSwapDelta.getUnspecifiedDelta(), _hookData
+                _key,
+                _params,
+                _sender,
+                internalBeforeSwapDelta.getUnspecifiedDelta(),
+                _hookData
             );
 
             // Increment our swap
-            _captureDelta(_params, TS_ISP_AMOUNT0, TS_ISP_AMOUNT1, internalBeforeSwapDelta);
+            _captureDelta(
+                _params,
+                TS_ISP_AMOUNT0,
+                TS_ISP_AMOUNT1,
+                internalBeforeSwapDelta
+            );
             _captureDeltaSwapFee(_params, TS_ISP_FEE0, TS_ISP_FEE1, swapFee);
 
             beforeSwapDelta_ = toBeforeSwapDelta(
-                beforeSwapDelta_.getSpecifiedDelta() + internalBeforeSwapDelta.getSpecifiedDelta(),
-                beforeSwapDelta_.getUnspecifiedDelta() + internalBeforeSwapDelta.getUnspecifiedDelta()
-                    + swapFee.toInt128()
+                beforeSwapDelta_.getSpecifiedDelta() +
+                    internalBeforeSwapDelta.getSpecifiedDelta(),
+                beforeSwapDelta_.getUnspecifiedDelta() +
+                    internalBeforeSwapDelta.getUnspecifiedDelta() +
+                    swapFee.toInt128()
             );
 
             // exact input (-100): remaining = -100 + 10 = -90
@@ -677,7 +737,7 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         }
 
         // Capture the beforeSwap tick value before actioning our Uniswap swap
-        (, _beforeSwapTick,,) = poolManager.getSlot0(_key.toId());
+        (, _beforeSwapTick, , ) = poolManager.getSlot0(_key.toId());
 
         // Check if the BidWall has become stale, and allow liquidity to be extracted before a
         // threshold has been built.
@@ -707,7 +767,7 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      * @return hookDeltaUnspecified_ The hook's delta in unspecified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
      */
 
-    //  function _afterSwap(address sender, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata hookData) internal override returns (bytes4 selector_, int128 hookDeltaUnspecified_) 
+    //  function _afterSwap(address sender, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata hookData) internal override returns (bytes4 selector_, int128 hookDeltaUnspecified_)
 
     function _afterSwap(
         address _sender,
@@ -715,10 +775,11 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         SwapParams calldata _params,
         BalanceDelta _delta,
         bytes calldata _hookData
-    ) internal override returns (
-        bytes4 selector_,
-        int128 hookDeltaUnspecified_
-    ) {
+    )
+        internal
+        override
+        returns (bytes4 selector_, int128 hookDeltaUnspecified_)
+    {
         /**
          * [FD] We need to determine the amount of fees generated by our Uniswap swap to capture,
          * rather than sending the full amount to the end user.
@@ -726,10 +787,18 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
 
         // Determine the currency that we will be taking our fee from
         (int128 amount0, int128 amount1) = (_delta.amount0(), _delta.amount1());
-        int128 swapAmount = _params.amountSpecified < 0 == _params.zeroForOne ? amount1 : amount0;
+        int128 swapAmount = _params.amountSpecified < 0 == _params.zeroForOne
+            ? amount1
+            : amount0;
 
         // Capture the swap fees and dispatch the referrer's share if set
-        uint swapFee = _captureAndDepositFees(_key, _params, _sender, swapAmount, _hookData);
+        uint swapFee = _captureAndDepositFees(
+            _key,
+            _params,
+            _sender,
+            swapAmount,
+            _hookData
+        );
 
         // Increment our swap
         assembly {
@@ -756,27 +825,29 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         _emitSwapUpdate(poolId, _sender);
 
         // Emit our pool state update to listeners
-        _emitPoolStateUpdate(poolId, selector_, abi.encode(_sender, _params, _delta));
+        _emitPoolStateUpdate(
+            poolId,
+            selector_,
+            abi.encode(_sender, _params, _delta)
+        );
     }
-
 
     /**
      * @notice Allows users to buy tokens directly from the fair launch bonding curve
      * @param _key The PoolKey for the token pool
      * @param _nativeIn The amount of native currency (USDC) being spent on the bonding curve
      */
-    
+
     function setPremineContract(address _premineContract) external onlyOwner {
         premineContract = _premineContract;
     }
 
-    function buyFairLaunch(
-        PoolKey calldata _key,
-        uint256 _nativeIn
-    ) external {
+    function buyFairLaunch(PoolKey calldata _key, uint256 _nativeIn) external {
         PoolId poolId = _key.toId();
 
-        FairLaunch.FairLaunchInfo memory info_ = fairLaunch.fairLaunchInfo(poolId);
+        FairLaunch.FairLaunchInfo memory info_ = fairLaunch.fairLaunchInfo(
+            poolId
+        );
         if (info_.closed) {
             revert FairLaunch.FairLaunchWindowHasClosed();
         }
@@ -808,19 +879,25 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         }
 
         // 1. Sell tokens from the bonding curve for the USDC amount being deposited.
-        (uint nativeIn, uint tokensOut, FairLaunch.FairLaunchInfo memory info) = fairLaunch.fillFromPosition(
-            poolId,
-            _nativeIn.toInt256()
-        );
+        (
+            uint nativeIn,
+            uint tokensOut,
+            FairLaunch.FairLaunchInfo memory info
+        ) = fairLaunch.fillFromPosition(poolId, _nativeIn.toInt256());
 
         if (tokensOut == 0) {
             revert("No tokens available");
         }
 
         if (isCreatorPremine) {
-            require(tokensOut <= uint256(premineAmount), "Exceeds premine allocation");
+            require(
+                tokensOut <= uint256(premineAmount),
+                "Exceeds premine allocation"
+            );
             emit PoolPremine(poolId, int256(tokensOut));
-            assembly { tstore(poolId, 0) }
+            assembly {
+                tstore(poolId, 0)
+            }
         }
 
         // 2. Calculate swap fee
@@ -847,7 +924,9 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         _distributeFees(_key);
 
         // 7. Check if fair launch is complete (sold out or window closed) and close position
-        if (info.remainingSupply == 0 || !fairLaunch.inFairLaunchWindow(poolId)) {
+        if (
+            info.remainingSupply == 0 || !fairLaunch.inFairLaunchWindow(poolId)
+        ) {
             closeExpiredFairLaunch(_key);
         }
     }
@@ -871,26 +950,36 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      */
     function _closeExpiredFairLaunch(PoolKey memory _key) internal {
         PoolId poolId = _key.toId();
-        FairLaunch.FairLaunchInfo memory info = fairLaunch.fairLaunchInfo(poolId);
-        
+        FairLaunch.FairLaunchInfo memory info = fairLaunch.fairLaunchInfo(
+            poolId
+        );
+
         // require(!info.closed, "Already closed");
         // require(info.remainingSupply == 0 || !fairLaunch.inFairLaunchWindow(poolId), "Fair launch still active");
-        
+
         _clearUnusedPremine(poolId);
         bool nativeIsZero = Currency.unwrap(_key.currency0) == nativeToken;
-        
+
         uint unsoldSupply = info.remainingSupply;
 
         // Burn remaining supply
         if (unsoldSupply != 0) {
-            (nativeIsZero ? _key.currency1 : _key.currency0).transfer(BURN_ADDRESS, unsoldSupply);
+            (nativeIsZero ? _key.currency1 : _key.currency0).transfer(
+                BURN_ADDRESS,
+                unsoldSupply
+            );
             emit FairLaunchBurn(poolId, unsoldSupply);
         }
-        
+
         // Calculate final price using MarketCappedPrice logic
         uint sold = info.initialSupply - unsoldSupply;
-        uint priceRaw = initialPrice.getPricing(info.targetMarketCap, info.initialSupply, info.p0, sold);
-        
+        uint priceRaw = initialPrice.getPricing(
+            info.targetMarketCap,
+            info.initialSupply,
+            info.p0,
+            sold
+        );
+
         // token0 = a, token1 = b
         uint160 sqrtPriceX96 = nativeIsZero
             ? initialPrice.encodeSqrtPrice(priceRaw, 1e18)
@@ -905,7 +994,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
             _nativeIsZero: nativeIsZero,
             _sqrtPriceX96: sqrtPriceX96
         }); // info.closed is set to true here
-
     }
 
     /**
@@ -914,14 +1002,10 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      *
      * @param _initialPrice The contract address for the `IInitialPrice` contract
      */
-    function setInitialPrice(
-        address _initialPrice
-    ) public onlyOwner {
+    function setInitialPrice(address _initialPrice) public onlyOwner {
         initialPrice = IInitialPrice(_initialPrice);
         emit InitialPriceUpdated(_initialPrice);
     }
-
-
 
     /**
      * We want to be able to distribute fees across our {FeeDistribution} recipients
@@ -948,7 +1032,10 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         // Find the distribution amount across our different users. The amount that treasury
         // receives will be determined by variables throughout the distribution flow, such as
         // the BidWall being disabled, etc.
-        (uint bidWallFee, uint creatorFee, uint protocolFee) = feeSplit(poolId, distributeAmount);
+        (uint bidWallFee, uint creatorFee, uint protocolFee) = feeSplit(
+            poolId,
+            distributeAmount
+        );
         uint treasuryFee;
 
         // Load our memecoin so that we can query the creator and treasury
@@ -976,10 +1063,18 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
             // we will need to instead allocate this to the protocol. If we are still in the FairLaunch
             // window the this will just carry over into the FairLaunch created position, so we already
             // have this value attributed.
-            if (bidWall.isBidWallEnabled(poolId) && !fairLaunch.inFairLaunchWindow(poolId)) {
+            if (
+                bidWall.isBidWallEnabled(poolId) &&
+                !fairLaunch.inFairLaunchWindow(poolId)
+            ) {
                 // Otherwise, we can deposit directly into the BidWall as we have permission to modify
                 // liquidity outside of the window.
-                bidWall.deposit(_poolKey, bidWallFee, _beforeSwapTick, nativeToken == Currency.unwrap(_poolKey.currency0));
+                bidWall.deposit(
+                    _poolKey,
+                    bidWallFee,
+                    _beforeSwapTick,
+                    nativeToken == Currency.unwrap(_poolKey.currency0)
+                );
             } else {
                 // If we cannot import into BidWall, then treasury will be allocated the fees
                 treasuryFee += bidWallFee;
@@ -1003,10 +1098,15 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
             _allocateFees(poolId, protocolFeeRecipient, protocolFee);
         }
 
-        emit PoolFeesDistributed(poolId, distributeAmount, creatorFee, bidWallFee, treasuryFee, protocolFee);
+        emit PoolFeesDistributed(
+            poolId,
+            distributeAmount,
+            creatorFee,
+            bidWallFee,
+            treasuryFee,
+            protocolFee
+        );
     }
-
-
 
     /**
      * Using the `tstore` values that we have generated along the way, we emit an event that shows
@@ -1019,9 +1119,18 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         // Emit our protocol-recognised event
         emit PoolSwap(
             _poolId,
-            _tload(TS_FL_AMOUNT0), _tload(TS_FL_AMOUNT1), _tload(TS_FL_FEE0), _tload(TS_FL_FEE1),
-            _tload(TS_ISP_AMOUNT0), _tload(TS_ISP_AMOUNT1), _tload(TS_ISP_FEE0), _tload(TS_ISP_FEE1),
-            _tload(TS_UNI_AMOUNT0), _tload(TS_UNI_AMOUNT1), _tload(TS_UNI_FEE0), _tload(TS_UNI_FEE1)
+            _tload(TS_FL_AMOUNT0),
+            _tload(TS_FL_AMOUNT1),
+            _tload(TS_FL_FEE0),
+            _tload(TS_FL_FEE1),
+            _tload(TS_ISP_AMOUNT0),
+            _tload(TS_ISP_AMOUNT1),
+            _tload(TS_ISP_FEE0),
+            _tload(TS_ISP_FEE1),
+            _tload(TS_UNI_AMOUNT0),
+            _tload(TS_UNI_AMOUNT1),
+            _tload(TS_UNI_FEE0),
+            _tload(TS_UNI_FEE1)
         );
 
         // Emit the Uniswap V4 standardised event
@@ -1061,28 +1170,39 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      * @param _key The selector being sent to notification subscribers
      * @param _data The data being sent to notification subscribers
      */
-     function _emitPoolStateUpdate(PoolId _poolId, bytes4 _key, bytes memory _data) internal {
+    function _emitPoolStateUpdate(
+        PoolId _poolId,
+        bytes4 _key,
+        bytes memory _data
+    ) internal {
         // Notify our subscribed contracts
         notifier.notifySubscribers(_poolId, _key, _data);
 
         // Emit our event
-        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee) = poolManager.getSlot0(_poolId);
-        emit PoolStateUpdated(_poolId, sqrtPriceX96, tick, protocolFee, swapFee, poolManager.getLiquidity(_poolId));
+        (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint24 protocolFee,
+            uint24 swapFee
+        ) = poolManager.getSlot0(_poolId);
+        emit PoolStateUpdated(
+            _poolId,
+            sqrtPriceX96,
+            tick,
+            protocolFee,
+            swapFee,
+            poolManager.getLiquidity(_poolId)
+        );
     }
-
-
 
     /**
      * Allows the contract used to launch a new token to be updated.
      *
      * @param _launchContract The new {ILaunch} contract address
      */
-    function setLaunch(
-        address _launchContract
-    ) public onlyOwner {
+    function setLaunch(address _launchContract) public onlyOwner {
         launchContract = ILaunch(_launchContract);
     }
-
 
     function setPremineContract(address _premineContract) external onlyOwner {
         premineContract = _premineContract;
@@ -1098,9 +1218,7 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
     /**
      * Calls for the BidWall to be closed, as this requires callback from the {PoolManager}.
      */
-    function closeBidWall(
-        PoolKey memory _key
-    ) public {
+    function closeBidWall(PoolKey memory _key) public {
         // Ensure that the call is made by the BidWall which validates logic
         if (msg.sender != address(bidWall)) {
             revert CallerIsNotBidWall();
@@ -1110,8 +1228,13 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         // otherwise we could processing issues and false positives in upcoming steps. We need to
         // ensure that the PoolKey is recognised (by checking the hooks address is not zero) and
         // that the PoolId matches when encoded.
-        PoolKey memory storedKey = _poolKeys[address(_key.memecoin(nativeToken))];
-        if (storedKey.hooks == IHooks(address(0)) || PoolId.unwrap(storedKey.toId()) != PoolId.unwrap(_key.toId())) {
+        PoolKey memory storedKey = _poolKeys[
+            address(_key.memecoin(nativeToken))
+        ];
+        if (
+            storedKey.hooks == IHooks(address(0)) ||
+            PoolId.unwrap(storedKey.toId()) != PoolId.unwrap(_key.toId())
+        ) {
             revert UnknownPool(_key.toId());
         }
 
@@ -1134,7 +1257,10 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
             revert CallerIsNotPoolManager();
         }
 
-        (bytes1 action, PoolKey memory key) = abi.decode(_data, (bytes1, PoolKey));
+        (bytes1 action, PoolKey memory key) = abi.decode(
+            _data,
+            (bytes1, PoolKey)
+        );
         if (action == _CLOSE_BIDWALL) {
             bidWall.closeBidWall(key);
         } else if (action == _CLOSE_FAIR_LAUNCH) {
@@ -1145,7 +1271,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
 
         return result;
     }
-
 
     /**
      * Capture the fees from our swap. This could either be from an internal swap (`beforeSwap`)
@@ -1169,7 +1294,10 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         bytes calldata _hookData
     ) internal returns (uint swapFee_) {
         // Determine the swap fee currency based on swap parameters
-        Currency swapFeeCurrency = _params.amountSpecified < 0 == _params.zeroForOne ? _key.currency1 : _key.currency0;
+        Currency swapFeeCurrency = _params.amountSpecified < 0 ==
+            _params.zeroForOne
+            ? _key.currency1
+            : _key.currency0;
 
         // Capture our swap fees amount
         swapFee_ = _captureSwapFees({
@@ -1212,7 +1340,8 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         bytes32 _key_amount1,
         BeforeSwapDelta _delta
     ) internal {
-        (int token0, int token1) = _params.amountSpecified < 0 == _params.zeroForOne
+        (int token0, int token1) = _params.amountSpecified < 0 ==
+            _params.zeroForOne
             ? (-_delta.getSpecifiedDelta(), -_delta.getUnspecifiedDelta())
             : (-_delta.getUnspecifiedDelta(), -_delta.getSpecifiedDelta());
 
@@ -1253,7 +1382,6 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
         }
     }
 
-
     /**
      * Settles tokens against the PoolManager based on the BalanceDelta passed.
      *
@@ -1262,17 +1390,38 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      * @param _poolKey The pool key to settle against
      * @param _delta The BalanceDelta showing token amounts to settle
      */
-    function _settleDelta(PoolKey memory _poolKey, BalanceDelta _delta) internal {
+    function _settleDelta(
+        PoolKey memory _poolKey,
+        BalanceDelta _delta
+    ) internal {
         if (_delta.amount0() < 0) {
-            _poolKey.currency0.settle(poolManager, address(this), uint(-int(_delta.amount0())), false);
+            _poolKey.currency0.settle(
+                poolManager,
+                address(this),
+                uint(-int(_delta.amount0())),
+                false
+            );
         } else if (_delta.amount0() > 0) {
-            poolManager.take(_poolKey.currency0, address(this), uint(int(_delta.amount0())));
+            poolManager.take(
+                _poolKey.currency0,
+                address(this),
+                uint(int(_delta.amount0()))
+            );
         }
 
         if (_delta.amount1() < 0) {
-            _poolKey.currency1.settle(poolManager, address(this), uint(-int(_delta.amount1())), false);
+            _poolKey.currency1.settle(
+                poolManager,
+                address(this),
+                uint(-int(_delta.amount1())),
+                false
+            );
         } else if (_delta.amount1() > 0) {
-            poolManager.take(_poolKey.currency1, address(this), uint(int(_delta.amount1())));
+            poolManager.take(
+                _poolKey.currency1,
+                address(this),
+                uint(int(_delta.amount1()))
+            );
         }
     }
 
@@ -1301,9 +1450,7 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      * On FairLaunch deadline the tokens are burned with unsold FL supply; on sold-out the
      * tokens were already bought by the public so only the claim is cleared.
      */
-    function _clearUnusedPremine(
-        PoolId _poolId
-    ) internal {
+    function _clearUnusedPremine(PoolId _poolId) internal {
         int premine = _tload(PoolId.unwrap(_poolId));
         if (premine == 0) {
             return;
@@ -1324,7 +1471,9 @@ contract GemFotManager is BaseHook, FeeDistributor, InternalSwapPool, StoreKeys,
      * @return value_ The `int` value in the tstore
      */
     function _tload(bytes32 _key) internal view returns (int value_) {
-        assembly { value_ := tload(_key) }
+        assembly {
+            value_ := tload(_key)
+        }
     }
 
     /**
