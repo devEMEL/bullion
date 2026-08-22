@@ -3,6 +3,7 @@ import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
 import { parseUnits, parseEventLogs } from 'viem';
 import { CONTRACTS } from '@/config/networks';
 import GemFotManagerAbi from '@/abi/GemFotManager.json';
+import { nativeInForTokens } from '@/lib/fairLaunchQuote';
 import { uploadTokenMetadata } from '@/lib/pinata';
 
 /** Default supply minted for a memecoin (100 billion, 18 decimals) */
@@ -101,6 +102,22 @@ export function useLaunchToken() {
         const nowSec = BigInt(Math.floor(Date.now() / 1000));
         const launchAt = values.startsInSeconds > 0 ? nowSec + BigInt(values.startsInSeconds) : 0n;
 
+        // Native token spent on the curve for the premine: the largest spend
+        // that yields at most `premineAmount` tokens from position zero, so
+        // `buyFairLaunch` never reverts with "Exceeds premine allocation".
+        // (The swap fee is pulled on top of this by the contract.)
+        let nativeIn = 0n;
+        if (premineAmount > 0n) {
+          nativeIn = nativeInForTokens(
+            {
+              targetMarketCap: usdcMarketCap.toString(),
+              initialTokenFairLaunch: initialTokenFairLaunch.toString(),
+              multiple: String(Math.max(1, Math.min(255, Math.round(values.multiple)))),
+            },
+            premineAmount
+          );
+        }
+
         // Matches GemFotManager.LaunchParams
         const params = {
           name: values.name.trim(),
@@ -115,6 +132,7 @@ export function useLaunchToken() {
           totalSupply,
           usdcMarketCap,
           multiple: Math.max(1, Math.min(255, Math.round(values.multiple))), // uint8
+          nativeIn, // uint256
         };
 
         // Query launch fee (USDC native token)
@@ -198,6 +216,7 @@ export function useLaunchToken() {
             initialTokenFairLaunch: params.initialTokenFairLaunch.toString(),
             fairLaunchDuration: params.fairLaunchDuration.toString(),
             premineAmount: params.premineAmount.toString(),
+            nativeIn: params.nativeIn.toString(),
             launchAt: params.launchAt.toString(),
             totalSupply: params.totalSupply.toString(),
             usdcMarketCap: params.usdcMarketCap.toString(),

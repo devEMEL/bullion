@@ -1373,6 +1373,11 @@
             "name": "multiple",
             "type": "uint8",
             "internalType": "uint8"
+          },
+          {
+            "name": "nativeIn",
+            "type": "uint256",
+            "internalType": "uint256"
           }
         ]
       }

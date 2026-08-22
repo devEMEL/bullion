@@ -78,13 +78,16 @@ export function calculateBuyAmount(
 }
 
 /**
- * Smallest `nativeIn` that buys at least `tokensWanted` starting from position
- * zero on the curve (e.g. a creator premine bought right after launch).
+ * Largest `nativeIn` whose purchase from position zero on the curve stays at
+ * or below `tokensWanted` tokens (e.g. a creator premine bought right after
+ * launch).
  *
- * Rather than analytically inverting the curve (fragile with Solidity floor
- * math), this binary-searches `calculateBuyAmount` — which is monotonic in
- * `nativeIn` — so the result is bit-for-bit the minimum spend computed by the
- * contract for the same purchase.
+ * Staying at-or-below matters because `GemFotManager.buyFairLaunch` reverts
+ * with "Exceeds premine allocation" when the curve output overshoots the
+ * stored premine amount. Rather than analytically inverting the curve
+ * (fragile with Solidity floor math), this binary-searches
+ * `calculateBuyAmount` — which is monotonic in `nativeIn` — so the result is
+ * bit-for-bit the maximum spend the contract accepts for this allocation.
  */
 export function nativeInForTokens(
   params: Pick<FairLaunchQuoteParams, 'targetMarketCap' | 'initialTokenFairLaunch' | 'multiple'>,
@@ -103,15 +106,17 @@ export function nativeInForTokens(
   let low = 0n;
   let high = (M * (multiple + 1n)) / (2n * multiple) + ONE_E_18;
 
+  // Find the first nativeIn whose output exceeds the target; answer is that
+  // minus one wei.
   while (low < high) {
     const mid = (low + high) / 2n;
-    if (calculateBuyAmount(M, S, p0, 0n, mid) >= target) {
-      high = mid;
-    } else {
+    if (calculateBuyAmount(M, S, p0, 0n, mid) <= target) {
       low = mid + 1n;
+    } else {
+      high = mid;
     }
   }
-  return low;
+  return low - 1n;
 }
 
 export interface FairLaunchQuoteParams {
