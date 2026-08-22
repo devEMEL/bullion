@@ -91,6 +91,7 @@ contract GemFotManager is
 
     /// Emitted when a Launch pool is scheduled
     event PoolScheduled(PoolId indexed _poolId, uint _launchesAt);
+    event PoolPremine(PoolId indexed _poolId, int256 tokensOut);
 
     /// Emitted when a pool swap occurs
     event PoolSwap(
@@ -831,12 +832,6 @@ contract GemFotManager is
             abi.encode(_sender, _params, _delta)
         );
     }
-
-    /**
-     * @notice Allows users to buy tokens directly from the fair launch bonding curve
-     * @param _key The PoolKey for the token pool
-     * @param _nativeIn The amount of native currency (USDC) being spent on the bonding curve
-     */
 
     function setPremineContract(address _premineContract) external onlyOwner {
         premineContract = _premineContract;
