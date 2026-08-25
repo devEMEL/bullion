@@ -11,7 +11,7 @@ import {
   PoolStateUpdated,
 } from '../../generated/GemFotManager/GemFotManager';
 import { Launch, Pool, Swap, PoolManager, Token } from '../../generated/schema';
-import { getOrCreateCreator, getOrCreateProtocol, ZERO_BI } from '../utils/entities';
+import { getOrCreateCreator, getOrCreateProtocol, getOrCreateGemfotManager, ZERO_BI } from '../utils/entities';
 import { convertTokenToDecimal, loadTransaction } from '../utils';
 import { getSubgraphConfig, SubgraphConfig } from '../utils/chains'
 import { findNativePerToken, sqrtPriceX96ToTokenPrices, getTrackedAmountUSD } from '../utils/pricing';
@@ -90,7 +90,7 @@ export function handlePoolScheduled(event: PoolScheduled): void {
 export function handlePoolPremine(event: PoolPremine): void {
   let launch = Launch.load(event.params._poolId.toHexString());
   if (launch == null) return;
-  launch.premineAmount = event.params._premineAmount;
+  launch.premineAmount = event.params.tokensOut;
   launch.save();
 }
 
@@ -130,7 +130,7 @@ export function handlePoolSwap(event: PoolSwap): void {
   const stablecoinAddresses = subgraphConfig.stablecoinAddresses
   const whitelistTokens = subgraphConfig.whitelistTokens
 
-  const poolManager = PoolManager.load(poolManagerAddress)!
+  const poolManager = getOrCreateGemfotManager(poolManagerAddress)
   const poolId = event.params.poolId.toHexString()
   const pool = Pool.load(poolId)
 

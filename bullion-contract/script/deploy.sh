@@ -162,7 +162,11 @@ fi
 # Recipient of the full genesis supply (minting is permanently disabled afterwards).
 export ADDRESS_TO_MINT_TO="${ADDRESS_TO_MINT_TO:-${PROTOCOL_OWNER}}"
 
-deploy BUSDC MineBUSDC.s.sol:MineBUSDC
+if [[ -n "${BUSDC:-}" ]]; then
+    echo "==> Reusing existing BUSDC: ${BUSDC}"
+else
+    deploy BUSDC MineBUSDC.s.sol:MineBUSDC
+fi
 export NATIVE_TOKEN="${BUSDC}"
 
 deploy FAUCET_ADDRESS DeployFaucet.s.sol:DeployFaucet

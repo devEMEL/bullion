@@ -906,9 +906,9 @@ contract GemFotManager is
         // 6. Distribute fees
         _distributeFees(_key);
 
-        // 7. Check if fair launch is complete (sold out or window closed) and close position
+        // 7. Check if fair launch is complete (sold out or window expired) and close position
         if (
-            info.remainingSupply == 0 || !fairLaunch.inFairLaunchWindow(poolId)
+            info.remainingSupply == 0 || block.timestamp >= info.endsAt
         ) {
             closeExpiredFairLaunch(_key);
         }
@@ -1048,7 +1048,7 @@ contract GemFotManager is
             // have this value attributed.
             if (
                 bidWall.isBidWallEnabled(poolId) &&
-                !fairLaunch.inFairLaunchWindow(poolId)
+                fairLaunch.fairLaunchInfo(poolId).closed
             ) {
                 // Otherwise, we can deposit directly into the BidWall as we have permission to modify
                 // liquidity outside of the window.

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { useAccount, usePublicClient, useWriteContract } from 'wagmi';
 import { parseUnits, parseEventLogs } from 'viem';
 import { CONTRACTS } from '@/config/networks';
 import GemFotManagerAbi from '@/abi/GemFotManager.json';
@@ -44,7 +44,7 @@ export interface LaunchResult {
 export function useLaunchToken() {
   const { address } = useAccount();
   const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
+  const { writeContractAsync } = useWriteContract();
 
   const [step, setStep] = useState<LaunchStep>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export function useLaunchToken() {
 
   const launch = useCallback(
     async (values: LaunchFormValues): Promise<LaunchResult | null> => {
-      if (!walletClient || !address || !publicClient) {
+      if (!address || !publicClient) {
         setError('Connect your wallet first.');
         setStep('error');
         return null;
@@ -162,8 +162,16 @@ export function useLaunchToken() {
           // Fallback to default gas settings if estimation fails
         }
 
-        /* -------------------------------- 3. Approve USDC fee -------- */
-        if (launchFee > 0n) {
+        /* -------------------------------- 3. Approve USDC fee & Premine -- */
+        let totalUSDCNeeded = launchFee;
+        if (params.nativeIn > 0n) {
+          // 1.03% fee buffer (103 bps) for premine swap fee & rounding safety
+          const premineSwapFeeWithBuffer = (params.nativeIn * 103n) / 10000n;
+          totalUSDCNeeded += params.nativeIn + premineSwapFeeWithBuffer;
+        }
+        
+
+        if (totalUSDCNeeded > 0n) {
           const currentAllowance = (await publicClient.readContract({
             address: CONTRACTS.nativeToken,
             abi: [
@@ -182,9 +190,9 @@ export function useLaunchToken() {
             args: [address, CONTRACTS.gemfotManager],
           })) as bigint;
 
-          if (currentAllowance < launchFee) {
+          if (currentAllowance < totalUSDCNeeded) {
             setStep('approving');
-            const approveTxHash = await walletClient.writeContract({
+            const approveTxHash = await writeContractAsync({
               address: CONTRACTS.nativeToken,
               abi: [
                 {
@@ -199,8 +207,7 @@ export function useLaunchToken() {
                 },
               ],
               functionName: 'approve',
-              args: [CONTRACTS.gemfotManager, launchFee],
-              account: address,
+              args: [CONTRACTS.gemfotManager, totalUSDCNeeded],
               ...gasFees,
             });
 
@@ -225,12 +232,34 @@ export function useLaunchToken() {
         });
 
         setStep('signing');
-        const txHash = await walletClient.writeContract({
+
+        // Pre-flight simulation & gas estimation
+        try {
+          const estimatedGas = await publicClient.estimateContractGas({
+            address: CONTRACTS.gemfotManager,
+            abi: (GemFotManagerAbi as any).abi || GemFotManagerAbi,
+            functionName: 'launch',
+            args: [params],
+            account: address,
+          });
+          console.log('Estimated launch gas units:', estimatedGas.toString());
+        } catch (simErr: any) {
+          console.warn('Pre-flight gas estimation notice:', simErr?.shortMessage || simErr?.message);
+        }
+
+        await publicClient.simulateContract({
           address: CONTRACTS.gemfotManager,
           abi: (GemFotManagerAbi as any).abi || GemFotManagerAbi,
           functionName: 'launch',
           args: [params],
           account: address,
+        });
+
+        const txHash = await writeContractAsync({
+          address: CONTRACTS.gemfotManager,
+          abi: (GemFotManagerAbi as any).abi || GemFotManagerAbi,
+          functionName: 'launch',
+          args: [params],
           ...gasFees,
         });
 
@@ -270,7 +299,7 @@ export function useLaunchToken() {
         return null;
       }
     },
-    [walletClient, address, publicClient]
+    [writeContractAsync, address, publicClient]
   );
 
   return {

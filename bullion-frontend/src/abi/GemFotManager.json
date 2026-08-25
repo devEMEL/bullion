@@ -977,7 +977,7 @@
         ]
       },
       {
-        "name": "_tokensToBuy",
+        "name": "_nativeIn",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -1619,6 +1619,19 @@
   },
   {
     "type": "function",
+    "name": "premineContract",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "renounceOwnership",
     "inputs": [],
     "outputs": [],
@@ -1724,6 +1737,19 @@
   },
   {
     "type": "function",
+    "name": "setPremineContract",
+    "inputs": [
+      {
+        "name": "_premineContract",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setProtocolFeeDistribution",
     "inputs": [
       {
@@ -1747,6 +1773,25 @@
     ],
     "outputs": [],
     "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "unlockCallback",
+    "inputs": [
+      {
+        "name": "_data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "result",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "event",
@@ -2053,6 +2098,11 @@
             "name": "multiple",
             "type": "uint8",
             "internalType": "uint8"
+          },
+          {
+            "name": "nativeIn",
+            "type": "uint256",
+            "internalType": "uint256"
           }
         ]
       }
@@ -2205,7 +2255,7 @@
         "internalType": "PoolId"
       },
       {
-        "name": "_premineAmount",
+        "name": "tokensOut",
         "type": "int256",
         "indexed": false,
         "internalType": "int256"
@@ -2391,6 +2441,11 @@
   },
   {
     "type": "error",
+    "name": "CallerIsNotPoolManager",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "CallerNotCreator",
     "inputs": [
       {
@@ -2497,5 +2552,10 @@
         "internalType": "PoolId"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "UnknownUnlockAction",
+    "inputs": []
   }
 ]

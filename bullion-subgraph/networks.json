@@ -1,4 +1,14 @@
 {
+  "liteforge": {
+    "PoolManager": {
+      "address": "0x4D089F979D0dFED3Cedc5d0A9403e466Cc31e2BF",
+      "startBlock": 43952309
+    },
+    "PositionManager": {
+      "address": "0x24608eBb7277F575C1ce8545677153544966b59C",
+      "startBlock": 43952309
+    }
+  },
   "sepolia": {
     "PoolManager": {
       "address": "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543",

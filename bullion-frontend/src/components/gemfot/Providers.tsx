@@ -3,7 +3,8 @@ import { WagmiProvider, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { arcTestnet, SUPPORTED_CHAINS, activeNetwork } from '@/config/networks';
+import {SUPPORTED_CHAINS, activeNetwork } from '@/config/networks';
+import {arcTestnet} from '@/lib/chains';
 
 const projectId =
   import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ||

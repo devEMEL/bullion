@@ -17,6 +17,8 @@ export interface EnrichedLaunch extends SubgraphLaunch {
   description: string;
   /** true while the fair launch window is open */
   isLive: boolean;
+  /** true if fair launch is scheduled to start in the future */
+  isScheduled: boolean;
 }
 
 const metaCache = new Map<string, LaunchMeta>();
@@ -57,12 +59,19 @@ export function useLaunches(options: { first?: number; pollMs?: number } = {}) {
         const enriched = await Promise.all(
           (data.launches ?? []).map(async (l) => {
             const meta = await fetchMeta(l.tokenUri);
+            const poolInitialized = Boolean(l.poolInitialized);
+            const startsAt = Number(l.fairLaunchStartsAt || 0);
+            const endsAt = Number(l.fairLaunchEndsAt || 0);
+            const isScheduled = !l.fairLaunchClosed && !poolInitialized && startsAt > 0 && now < startsAt;
+            const isLive = !l.fairLaunchClosed && !poolInitialized && (startsAt === 0 || now >= startsAt) && now < endsAt;
+
             return {
               ...l,
               creator: typeof l.creator === 'string' ? l.creator : l.creator?.id ?? '',
               imageUrl: ipfsToHttp(meta.image),
               description: meta.description ?? '',
-              isLive: !l.fairLaunchClosed && now < Number(l.fairLaunchEndsAt),
+              isLive,
+              isScheduled,
             } as EnrichedLaunch;
           })
         );

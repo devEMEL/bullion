@@ -30,6 +30,7 @@ import {LinearBondingCurve} from "@gemfot/libraries/LinearBondingCurve.sol";
 import {IInitialPrice} from "@gemfot-interfaces/IInitialPrice.sol";
 import {IMemecoin} from "@gemfot-interfaces/IMemecoin.sol";
 import {BUSDC} from "@gemfot/BUSDC.sol";
+import {PremineSubscriber} from "@gemfot/subscribers/Premine.sol";
 
 
 /**
@@ -58,6 +59,7 @@ contract GemFotManagerTest is Test {
     USDCMarketCappedPrice initialPrice;
     TreasuryActionManager actionManager;
     BUSDC busdc; // the protocol's native token
+    PremineSubscriber premineSubscriber;
 
     address protocolOwner = makeAddr("protocolOwner");
     address protocolFeeRecipient = makeAddr("protocolFeeRecipient");
@@ -180,6 +182,19 @@ contract GemFotManagerTest is Test {
         // Set launch contract on manager
         vm.prank(protocolOwner);
         manager.setLaunch(address(launchContract));
+
+        // Deploy and wire PremineSubscriber
+        premineSubscriber = new PremineSubscriber(
+            address(manager),
+            address(launchContract)
+        );
+        vm.startPrank(protocolOwner);
+        manager.notifier().subscribe(
+            address(premineSubscriber),
+            ""
+        );
+        manager.setPremineContract(address(premineSubscriber));
+        vm.stopPrank();
 
         // Distribute native token to test addresses
         busdc.transfer(creator, 1_000_000 * 10 ** NATIVE_DECIMALS);
@@ -439,6 +454,76 @@ contract GemFotManagerTest is Test {
             multiple: MULTIPLE,
             nativeIn: 0
         });
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                    Future timestamp launch (launchAt > now)                 */
+    /* -------------------------------------------------------------------------- */
+
+    function test_LaunchWithFutureTimestamp() public {
+        GemFotManager.LaunchParams memory params = _defaultLaunchParams();
+        params.launchAt = block.timestamp + 1 days;
+
+        vm.startPrank(creator);
+        busdc.approve(address(manager), initialPrice.getLaunchingFee());
+        address memecoin = manager.launch(params);
+        vm.stopPrank();
+
+        assertTrue(memecoin != address(0), "Memecoin should be deployed");
+    }
+
+    function test_LaunchWithFutureTimestampAndPremine() public {
+        GemFotManager.LaunchParams memory params = _defaultLaunchParams();
+        params.launchAt = block.timestamp + 1 days;
+        // premineAmount must be >= what nativeIn buys on the bonding curve
+        // 10,000 USDC buys ~172M tokens at this price point, so set to 500M
+        params.premineAmount = 500_000_000 * 10 ** TOKEN_DECIMALS;
+        // Large enough nativeIn so that 3% swap fee (300 bps) exceeds MIN_DISTRIBUTE_THRESHOLD (100 USDC)
+        params.nativeIn = 10_000 * 10 ** NATIVE_DECIMALS; // 10,000 USDC => fee = 300 USDC
+
+        vm.startPrank(creator);
+        busdc.approve(address(manager), initialPrice.getLaunchingFee() + params.nativeIn * 2);
+        address memecoin = manager.launch(params);
+        vm.stopPrank();
+
+        assertTrue(memecoin != address(0), "Memecoin should be deployed");
+
+        // Verify premine was executed
+        uint creatorBalance = IERC20(memecoin).balanceOf(creator);
+        assertGt(creatorBalance, 0, "Creator should have received premine tokens");
+
+        // Verify fair launch info shows future start
+        PoolKey memory key = manager.poolKey(memecoin);
+        FairLaunch.FairLaunchInfo memory info = fairLaunch.fairLaunchInfo(key.toId());
+        assertGt(info.startsAt, block.timestamp, "Fair launch should start in the future");
+        assertFalse(info.closed, "Fair launch should not be closed yet");
+    }
+
+    function test_BuyFairLaunchAfterFutureTimestampExpires() public {
+        GemFotManager.LaunchParams memory params = _defaultLaunchParams();
+        params.launchAt = block.timestamp + 1 days;
+        params.premineAmount = 500_000_000 * 10 ** TOKEN_DECIMALS;
+        params.nativeIn = 10_000 * 10 ** NATIVE_DECIMALS;
+
+        vm.startPrank(creator);
+        busdc.approve(address(manager), initialPrice.getLaunchingFee() + params.nativeIn * 2);
+        address memecoin = manager.launch(params);
+        vm.stopPrank();
+
+        PoolKey memory key = manager.poolKey(memecoin);
+
+        // Warp to after fair launch window opens
+        vm.warp(params.launchAt + 1);
+
+        // Buy should succeed now
+        uint buyAmount = 1_000 * 10 ** NATIVE_DECIMALS;
+        vm.startPrank(buyer);
+        busdc.approve(address(manager), buyAmount * 2);
+        manager.buyFairLaunch(key, buyAmount);
+        vm.stopPrank();
+
+        uint balance = IERC20(memecoin).balanceOf(buyer);
+        assertGt(balance, 0, "Buyer should receive tokens after launch window opens");
     }
 
     function _launchToken() internal returns (address memecoin_) {

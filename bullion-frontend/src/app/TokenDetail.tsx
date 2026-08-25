@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  Clock,
   Copy,
   ExternalLink,
   Globe,
@@ -131,47 +132,49 @@ function TokenInfoCard({
     },
     ...(!isGraduated
       ? [
-          {
-            label: 'Fair launch supply',
-            value: fmtToken(launch.initialTokenFairLaunch),
-          },
-          {
-            label: 'Duration',
-            value: `${(Number(launch.fairLaunchDuration) / 3600).toFixed(1)}h`,
-          },
-          {
-            label: 'Multiple',
-            value: `${launch.multiple}×`,
-          },
-          {
-            label: 'Expected raise',
-            value: `${calcExpectedRaise(launch.targetMarketCap, launch.multiple)} ${CONTRACTS.nativeTokenSymbol}`,
-          },
-          {
-            label: 'Starts',
-            value:
-              launch.fairLaunchStartsAt && Number(launch.fairLaunchStartsAt) > 0
-                ? new Date(Number(launch.fairLaunchStartsAt) * 1000).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : 'Immediate',
-          },
-          {
-            label: 'Ends',
-            value:
-              launch.fairLaunchEndsAt && Number(launch.fairLaunchEndsAt) > 0
-                ? new Date(Number(launch.fairLaunchEndsAt) * 1000).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : '—',
-          },
-        ]
+        {
+          label: 'Fair launch supply',
+          value: fmtToken(launch.initialTokenFairLaunch),
+        },
+        {
+          label: 'Duration',
+          value: `${(Number(launch.fairLaunchDuration) / 3600).toFixed(1)}h`,
+        },
+        {
+          label: 'Multiple',
+          value: `${launch.multiple}×`,
+        },
+        {
+          label: 'Expected raise',
+          value: `${calcExpectedRaise(launch.targetMarketCap, launch.multiple)} ${CONTRACTS.nativeTokenSymbol}`,
+        },
+        {
+          label: 'Starts',
+          value:
+            launch.fairLaunchStartsAt && Number(launch.fairLaunchStartsAt) > 0
+              ? Number(launch.fairLaunchStartsAt) > Math.floor(Date.now() / 1000)
+                ? `In ${countdown(Number(launch.fairLaunchStartsAt))}`
+                : new Date(Number(launch.fairLaunchStartsAt) * 1000).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'Immediate',
+        },
+        {
+          label: 'Ends',
+          value:
+            launch.fairLaunchEndsAt && Number(launch.fairLaunchEndsAt) > 0
+              ? new Date(Number(launch.fairLaunchEndsAt) * 1000).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+              : '—',
+        },
+      ]
       : []),
   ];
 
@@ -188,8 +191,8 @@ function TokenInfoCard({
       </div>
       <div className="mt-3 flex items-center justify-between gap-3 px-1">
         <span className="text-[12px] font-medium text-white/40">Status</span>
-        <span className={`chip ${launch.isLive ? 'chip-live' : launch.fairLaunchClosed ? '' : 'chip-ink'}`}>
-          {launch.fairLaunchClosed ? 'Closed' : launch.isLive ? 'Live' : isGraduated ? 'Graduated' : 'Ended'}
+        <span className={`chip ${launch.isLive ? 'chip-live' : launch.isScheduled ? 'text-amber-300 bg-amber-500/10 border-amber-500/20' : launch.fairLaunchClosed ? '' : 'chip-ink'}`}>
+          {launch.fairLaunchClosed ? 'Closed' : launch.isScheduled ? 'Scheduled' : launch.isLive ? 'Live' : isGraduated ? 'Graduated' : 'Ended'}
         </span>
       </div>
     </div>
@@ -342,21 +345,19 @@ function TradeWidget({
       <div className="bg-white/5 p-1 rounded-2xl flex items-center mb-5 border border-white/[0.06]">
         <button
           onClick={() => setSide('buy')}
-          className={`flex-1 py-2.5 rounded-xl text-[14px] font-extrabold transition-all cursor-pointer ${
-            side === 'buy'
+          className={`flex-1 py-2.5 rounded-xl text-[14px] font-extrabold transition-all cursor-pointer ${side === 'buy'
               ? 'bg-white text-black shadow-md'
               : 'text-white/50 hover:text-white'
-          }`}
+            }`}
         >
           Buy
         </button>
         <button
           onClick={() => setSide('sell')}
-          className={`flex-1 py-2.5 rounded-xl text-[14px] font-extrabold transition-all cursor-pointer ${
-            side === 'sell'
+          className={`flex-1 py-2.5 rounded-xl text-[14px] font-extrabold transition-all cursor-pointer ${side === 'sell'
               ? 'bg-white text-black shadow-md'
               : 'text-white/50 hover:text-white'
-          }`}
+            }`}
         >
           Sell
         </button>
@@ -493,6 +494,10 @@ function TradeWidget({
       {isSellDisabledInFairLaunch ? (
         <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center text-white/50 text-[13px] font-semibold">
           Selling opens once token graduates to DEX
+        </div>
+      ) : launch.isScheduled ? (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center text-amber-300 text-[13px] font-bold">
+          Fair launch starts in {countdown(Number(launch.fairLaunchStartsAt))}
         </div>
       ) : (
         <button
@@ -1196,7 +1201,12 @@ export default function TokenDetail() {
                     {launch.name}
                   </h1>
                   <span className="text-[15px] font-bold text-white/35">${launch.symbol}</span>
-                  {launch.isLive ? (
+                  {launch.isScheduled ? (
+                    <span className="chip text-amber-300 bg-amber-500/10 border-amber-500/20">
+                      <Clock size={11} className="text-amber-400" />
+                      Starts in {countdown(Number(launch.fairLaunchStartsAt))}
+                    </span>
+                  ) : launch.isLive ? (
                     <span className="chip chip-live">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#5865F2] animate-blink" />
                       {countdown(Number(launch.fairLaunchEndsAt))}
@@ -1269,6 +1279,30 @@ export default function TokenDetail() {
               {/* Left column: Bonding curve & Trade tape */}
               <div className="space-y-5">
                 <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                  {launch.isScheduled && (
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 shadow-md">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                          <Clock size={20} className="text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-[14px] font-extrabold text-amber-300">Fair Launch Starts Soon</p>
+                          <p className="text-[12px] font-medium text-amber-200/70 mt-0.5">
+                            Buying opens on {new Date(Number(launch.fairLaunchStartsAt) * 1000).toLocaleString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="self-start sm:self-auto px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/30 text-[14px] font-extrabold text-amber-300 tabular-nums">
+                        Starts in {countdown(Number(launch.fairLaunchStartsAt))}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex items-baseline justify-between mb-3">
                     <span className="text-[13px] font-bold text-white/50">Curve filled</span>
                     <span className="text-[15px] font-extrabold text-[#5865F2] tabular-nums">

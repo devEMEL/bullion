@@ -81,7 +81,11 @@ function LaunchBlock({ launch, index }: { launch: EnrichedLaunch; index: number 
               {timeAgo(Number(launch.createdAtTimestamp))}
             </span>
           </div>
-          {launch.isLive ? (
+          {launch.isScheduled ? (
+            <span className="chip text-amber-300 bg-amber-500/10 border-amber-500/20 shrink-0">
+              Starts in {countdown(Number(launch.fairLaunchStartsAt))}
+            </span>
+          ) : launch.isLive ? (
             <span className="chip chip-live shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-[#5865F2] animate-blink" />
               {countdown(Number(launch.fairLaunchEndsAt))}

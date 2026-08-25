@@ -279,7 +279,9 @@ export default function LaunchToken() {
     step === 'uploading'
       ? 'Uploading to IPFS…'
       : step === 'approving'
-        ? 'Approving 10 bUSDC launch fee…'
+        ? form.preminePercent > 0
+          ? 'Approving bUSDC (fee + premine)…'
+          : 'Approving 10 bUSDC launch fee…'
         : step === 'signing'
           ? 'Confirm in your wallet…'
           : step === 'confirming'

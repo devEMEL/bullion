@@ -1,4 +1,5 @@
 import { defineChain } from '@reown/appkit/networks';
+import { arcTestnet } from '@/lib/chains';
 
 /**
  * GemFot network registry.
@@ -52,32 +53,7 @@ export interface GemFotNetwork {
   contracts: GemFotContracts;
 }
 
-export const liteforgeTestnet = defineChain({
-  id: 4441,
-  caipNetworkId: 'eip155:4441',
-  chainNamespace: 'eip155',
-  name: 'Liteforge Testnet',
-  nativeCurrency: {
-    decimals: 18,
-    name: 'Liteforge ETH',
-    symbol: 'ETH',
-  },
-  rpcUrls: {
-    default: {
-      http: [
-        'https://liteforge.rpc.caldera.xyz/http',
-      ],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: 'Liteforge Explorer',
-      url: 'https://liteforge.explorer.caldera.xyz',
-    },
-  },
-});
 
-export const arcTestnet = liteforgeTestnet;
 
 export const NETWORKS = {
   arc_testnet: {
@@ -92,31 +68,31 @@ export const NETWORKS = {
     rpcUrls: [
       'https://liteforge.rpc.caldera.xyz/http',
     ],
-    startBlock: 0,
+    startBlock: 44028100,
     contracts: {
       nativeToken: '0x11Dcf8343f868d8b88eFb3e45da4a5fcD43C3Fc0',
       nativeTokenSymbol: 'bUSDC',
       nativeTokenDecimals: 18,
 
-      poolManager: '0xc7F528A2E6040fAb641ea2DeCCba9fb270f76Bb5',
-      positionManager: '0x3A882b511D705FeE471B1276f106adB7f3680915',
-      stateView: '0x0cb11B2b45087ED222f608E97a9Cd466C06534c3',
-      permit2: '0x795ff63d8Df87520d2430E26Ba858dc6c4385737',
+      poolManager: '0xDF6166bEf93B3aE8BFCe73225Dc5348c5A0Ad96A',
+      positionManager: '0xF611321abdeb9fbcb36C8238a694712f8B196392',
+      stateView: '0x2D21B11f49065C6220db8316C9c151f2f5C2b1A7',
+      permit2: '0x496C2CF27577473a4e44b3E995dDf46D643482bF',
 
-      gemfotManager: '0x9fd953946FD2f6DDD32C3a44c73373EaBfD36fDC',
-      launch: '0x10a2A353598E85Ea959B9176a6432a63C086A1Be',
-      fairLaunch: '0xE65220a143ae351B2fDDBE72739891AD7Db2cb59',
-      bidWall: '0x8F59a23C864bd8235252cC89ed13B0c3eBcB481F',
-      initialPrice: '0xd1677Ce9ae9f1417F9ED610139126C6A4cdA3989',
-      feeEscrow: '0x441171b80129045F885a5f0080f2329619BD7fBA',
-      feeExemptions: '0x1321e798fCc0FF0c831441f28589BB06c9C13da6',
-      actionManager: '0x8A05e95be232Fc6e6EdE196Bd7007c12bab31b6f',
-      notifier: '0x8251fc7720699c3cB3676a907f20b29B05C49b32',
-      indexer: '0x94eEF2472E403B70DdEBDe853aB9dBc972F55691',
-      protocolFeeRecipient: '0xEB6D604A3ad8A85b812C50C74d26366a7412829E',
-      memecoinImplementation: '0x400Bd64eb76604FD45a6cE9c47ED9E65529df08B',
-      memecoinTreasuryImplementation: '0x1a76f8eC9851ae2985078d4671E7a837E2c6c23e',
-      poolSwap: '0x3be547CdB18E5015AE0ad1e93E5374F6EEA48Db4',
+      gemfotManager: '0x3B4D3ec4508e79115b7D9c94E72e970dCf5d2FDC',
+      launch: '0xDcbb86a7d05360Dc454203ec1D1A7741669311D8',
+      fairLaunch: '0x5Bd9a64a124a7ec0b64b3E19Bc1F70b894B1Fb12',
+      bidWall: '0x5624D42dFd4ad454E88278991D67601Ba16E6fa6',
+      initialPrice: '0x99d55FF1D08C106eC1EaB7eb128D2046C7332A2A',
+      feeEscrow: '0xDdb5059a8AFE4bf6b5D9d27e50a447E0B8025455',
+      feeExemptions: '0x13697C2c2329bf895Be1bED0e0A03647B206d15B',
+      actionManager: '0x5Efe7FC45FC1b141699cFAE498De916A2772085E',
+      notifier: '0x24DFF2AB05fcb2803DfF0F26F28B39380906ffd2',
+      indexer: '0x678614D446e3A957d480Da2Ae621aC977de2E492',
+      protocolFeeRecipient: '0x726ce52136f9f3A544F3273611a9d5669aD01137',
+      memecoinImplementation: '0xCF6f06f47b81a81eB2dE531bBE117E020dAc7Ae9',
+      memecoinTreasuryImplementation: '0x4da37519446AF21F5CBf465d4cdF3182C0b1A2f8',
+      poolSwap: '0xA35125717a9B3589752695F12a5927E751E8fCa1',
     },
   },
 } satisfies Record<string, GemFotNetwork>;

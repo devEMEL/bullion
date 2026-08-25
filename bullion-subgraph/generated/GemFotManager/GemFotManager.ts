@@ -324,6 +324,10 @@ export class PoolCreated_paramsStruct extends ethereum.Tuple {
   get multiple(): i32 {
     return this[11].toI32();
   }
+
+  get nativeIn(): BigInt {
+    return this[12].toBigInt();
+  }
 }
 
 export class PoolFeeDistributionUpdated extends ethereum.Event {
@@ -475,7 +479,7 @@ export class PoolPremine__Params {
     return this._event.parameters[0].value.toBytes();
   }
 
-  get _premineAmount(): BigInt {
+  get tokensOut(): BigInt {
     return this._event.parameters[1].value.toBigInt();
   }
 }
@@ -2196,6 +2200,50 @@ export class GemFotManager extends ethereum.SmartContract {
     let value = result.value;
     return ethereum.CallResult.fromValue(value[0].toBigInt());
   }
+
+  premineContract(): Address {
+    let result = super.call(
+      "premineContract",
+      "premineContract():(address)",
+      [],
+    );
+
+    return result[0].toAddress();
+  }
+
+  try_premineContract(): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "premineContract",
+      "premineContract():(address)",
+      [],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
+  unlockCallback(_data: Bytes): Bytes {
+    let result = super.call("unlockCallback", "unlockCallback(bytes):(bytes)", [
+      ethereum.Value.fromBytes(_data),
+    ]);
+
+    return result[0].toBytes();
+  }
+
+  try_unlockCallback(_data: Bytes): ethereum.CallResult<Bytes> {
+    let result = super.tryCall(
+      "unlockCallback",
+      "unlockCallback(bytes):(bytes)",
+      [ethereum.Value.fromBytes(_data)],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toBytes());
+  }
 }
 
 export class ConstructorCall extends ethereum.Call {
@@ -3171,7 +3219,7 @@ export class BuyFairLaunchCall__Inputs {
     );
   }
 
-  get _tokensToBuy(): BigInt {
+  get _nativeIn(): BigInt {
     return this._call.inputValues[1].value.toBigInt();
   }
 }
@@ -3454,6 +3502,10 @@ export class LaunchCall_paramsStruct extends ethereum.Tuple {
   get multiple(): i32 {
     return this[11].toI32();
   }
+
+  get nativeIn(): BigInt {
+    return this[12].toBigInt();
+  }
 }
 
 export class RenounceOwnershipCall extends ethereum.Call {
@@ -3664,6 +3716,36 @@ export class SetPoolFeeDistributionCall_feeDistributionStruct extends ethereum.T
   }
 }
 
+export class SetPremineContractCall extends ethereum.Call {
+  get inputs(): SetPremineContractCall__Inputs {
+    return new SetPremineContractCall__Inputs(this);
+  }
+
+  get outputs(): SetPremineContractCall__Outputs {
+    return new SetPremineContractCall__Outputs(this);
+  }
+}
+
+export class SetPremineContractCall__Inputs {
+  _call: SetPremineContractCall;
+
+  constructor(call: SetPremineContractCall) {
+    this._call = call;
+  }
+
+  get _premineContract(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+}
+
+export class SetPremineContractCall__Outputs {
+  _call: SetPremineContractCall;
+
+  constructor(call: SetPremineContractCall) {
+    this._call = call;
+  }
+}
+
 export class SetProtocolFeeDistributionCall extends ethereum.Call {
   get inputs(): SetProtocolFeeDistributionCall__Inputs {
     return new SetProtocolFeeDistributionCall__Inputs(this);
@@ -3721,5 +3803,39 @@ export class TransferOwnershipCall__Outputs {
 
   constructor(call: TransferOwnershipCall) {
     this._call = call;
+  }
+}
+
+export class UnlockCallbackCall extends ethereum.Call {
+  get inputs(): UnlockCallbackCall__Inputs {
+    return new UnlockCallbackCall__Inputs(this);
+  }
+
+  get outputs(): UnlockCallbackCall__Outputs {
+    return new UnlockCallbackCall__Outputs(this);
+  }
+}
+
+export class UnlockCallbackCall__Inputs {
+  _call: UnlockCallbackCall;
+
+  constructor(call: UnlockCallbackCall) {
+    this._call = call;
+  }
+
+  get _data(): Bytes {
+    return this._call.inputValues[0].value.toBytes();
+  }
+}
+
+export class UnlockCallbackCall__Outputs {
+  _call: UnlockCallbackCall;
+
+  constructor(call: UnlockCallbackCall) {
+    this._call = call;
+  }
+
+  get result(): Bytes {
+    return this._call.outputValues[0].value.toBytes();
   }
 }

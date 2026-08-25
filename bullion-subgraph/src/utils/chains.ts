@@ -83,22 +83,24 @@ export function getSubgraphConfig(): SubgraphConfig {
 
   if (selectedNetwork == LITEFORGE_NETWORK_NAME) {
     return {
-      // Lock Bundle.ethPriceUSD to $1 SINCE ARC USES USDC AS NATIVE TOKEN
-      poolManagerAddress: '0xF351A424955ba04e3d49dDa6E549a5983dB264B9',
+      // Lock Bundle.ethPriceUSD to $1 SINCE LITEFORGE USES bUSDC AS NATIVE TOKEN
+      poolManagerAddress: '0xdf6166bef93b3ae8bfce73225dc5348c5a0ad96a',
       stablecoinWrappedNativePoolId: '', 
       stablecoinIsToken0: false,
-      wrappedNativeAddress: '0xd03307a0d5092b17c12ca9380f707f7d7fcd8f09', // bZKLTC
+      wrappedNativeAddress: '0x11dcf8343f868d8b88efb3e45da4a5fcd43c3fc0', // bUSDC
       minimumNativeLocked: BigDecimal.fromString('1'),
-      stablecoinAddresses: [],
+      stablecoinAddresses: [
+        '0x11dcf8343f868d8b88efb3e45da4a5fcd43c3fc0', // bUSDC
+      ],
       whitelistTokens: [
-        '0xd03307a0d5092b17c12ca9380f707f7d7fcd8f09', // bZKLTC
+        '0x11dcf8343f868d8b88efb3e45da4a5fcd43c3fc0', // bUSDC
       ], // all addresses should be in lower case
       tokenOverrides: [],
       poolsToSkip: [],
       poolMappings: [],
       nativeTokenDetails: {
-        symbol: 'bZKLTC',
-        name: 'Bullion ZKLTC',
+        symbol: 'bUSDC',
+        name: 'Bullion USDC',
         decimals: BigInt.fromI32(18),
       },
     }

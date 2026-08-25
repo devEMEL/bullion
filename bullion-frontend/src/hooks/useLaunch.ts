@@ -17,7 +17,7 @@ export interface LaunchDetail extends SubgraphLaunch {
   description: string;
   links: Record<string, string | undefined>;
   isLive: boolean;
-  poolInitialized?: boolean;
+  isScheduled: boolean;
   isGraduated: boolean;
   buys: LaunchBuy[];
   swaps?: any[];
@@ -108,13 +108,19 @@ export function useLaunch(memecoin?: string, pollMs = 12_000) {
 
         const now = Math.floor(Date.now() / 1000);
         const poolInitialized = Boolean(raw.poolInitialized);
+        const startsAt = Number(raw.fairLaunchStartsAt || 0);
+        const endsAt = Number(raw.fairLaunchEndsAt || 0);
+        const isScheduled = !raw.fairLaunchClosed && !poolInitialized && startsAt > 0 && now < startsAt;
+        const isLive = !raw.fairLaunchClosed && !poolInitialized && (startsAt === 0 || now >= startsAt) && now < endsAt;
+
         setLaunch({
           ...raw,
           creator: typeof raw.creator === 'string' ? raw.creator : raw.creator?.id ?? '',
           imageUrl: ipfsToHttp(meta.image),
           description: meta.description ?? '',
           links: meta.links ?? {},
-          isLive: !raw.fairLaunchClosed && now < Number(raw.fairLaunchEndsAt),
+          isLive,
+          isScheduled,
           poolInitialized,
           isGraduated: poolInitialized,
           buys: raw.buys ?? [],

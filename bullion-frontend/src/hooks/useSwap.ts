@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { useAccount, usePublicClient, useWriteContract } from 'wagmi';
 import { maxUint256, parseUnits } from 'viem';
 import { CONTRACTS } from '@/config/networks';
 import GemFotManagerAbi from '@/abi/GemFotManager.json';
@@ -23,7 +23,7 @@ export type SwapStep = 'idle' | 'approving' | 'signing' | 'confirming' | 'done' 
 export function useSwap(memecoin?: string, isGraduated?: boolean) {
   const { address } = useAccount();
   const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
+  const { writeContractAsync } = useWriteContract();
 
   const [step, setStep] = useState<SwapStep>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
    */
   const swap = useCallback(
     async (amount: string, direction: 'buy' | 'sell') => {
-      if (!walletClient || !publicClient || !address) {
+      if (!publicClient || !address) {
         setError('Connect your wallet first.');
         setStep('error');
         return null;
@@ -110,12 +110,11 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
 
           if (allowance < approvalAmount) {
             setStep('approving');
-            const approveHash = await walletClient.writeContract({
+            const approveHash = await writeContractAsync({
               address: tokenIn,
               abi: erc20AbiArray,
               functionName: 'approve',
               args: [CONTRACTS.gemfotManager, approvalAmount],
-              account: address,
               ...gasFees,
             });
             await publicClient.waitForTransactionReceipt({ hash: approveHash });
@@ -130,12 +129,11 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
             args: [poolKey, amountIn],
             account: address,
           });
-          const hash = await walletClient.writeContract({
+          const hash = await writeContractAsync({
             address: CONTRACTS.gemfotManager,
             abi: gemfotManagerAbiArray,
             functionName: 'buyFairLaunch',
             args: [poolKey, amountIn],
-            account: address,
             ...gasFees,
           });
 
@@ -157,12 +155,11 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
 
           if (allowance < amountIn) {
             setStep('approving');
-            const approveHash = await walletClient.writeContract({
+            const approveHash = await writeContractAsync({
               address: tokenIn,
               abi: erc20AbiArray,
               functionName: 'approve',
               args: [CONTRACTS.poolSwap, amountIn],
-              account: address,
               ...gasFees,
             });
             await publicClient.waitForTransactionReceipt({ hash: approveHash });
@@ -184,7 +181,7 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
             ],
             account: address,
           });
-          const hash = await walletClient.writeContract({
+          const hash = await writeContractAsync({
             address: CONTRACTS.poolSwap,
             abi: (PoolSwapAbi as any).abi || PoolSwapAbi,
             functionName: 'swap',
@@ -196,7 +193,6 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
                 sqrtPriceLimitX96: zeroForOne ? MIN_SQRT_PRICE : MAX_SQRT_PRICE,
               },
             ],
-            account: address,
             ...gasFees,
           });
 
@@ -220,7 +216,7 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
         return null;
       }
     },
-    [walletClient, publicClient, address, memecoin, isGraduated]
+    [writeContractAsync, publicClient, address, memecoin, isGraduated]
   );
 
   return {
