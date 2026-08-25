@@ -23,18 +23,18 @@ export const TOKENS: TokenConfig[] = [
     "logo": "/assets/0x3600000000000000000000000000000000000000/logo.png"
   },
   {
-    "address": "0xF351A424955ba04e3d49dDa6E549a5983dB264B9" as `0x${string}`,
+    "address": "0xc7F528A2E6040fAb641ea2DeCCba9fb270f76Bb5" as `0x${string}`,
     "name": "UniCrypt",
     "symbol": "UNCX",
     "decimals": 18,
-    "logo": "/assets/0xF351A424955ba04e3d49dDa6E549a5983dB264B9/logo.png"
+    "logo": "/assets/0xc7F528A2E6040fAb641ea2DeCCba9fb270f76Bb5/logo.png"
   },
   {
-    "address": "0x68b6Bdb4AC1d0EBafe5D00309225998997d7137d" as `0x${string}`,
+    "address": "0x13676CC8CA2a92c745C01f1310ac775223A1a37a" as `0x${string}`,
     "name": "Flux",
     "symbol": "FLUX",
     "decimals": 18,
-    "logo": "/assets/0x68b6Bdb4AC1d0EBafe5D00309225998997d7137d/logo.png"
+    "logo": "/assets/0x13676CC8CA2a92c745C01f1310ac775223A1a37a/logo.png"
   },
   {
     "address": "0x36bEE8F2DF69Cf3AFAb5c5ccA973fEb6441cAb11" as `0x${string}`,
@@ -44,18 +44,18 @@ export const TOKENS: TokenConfig[] = [
     "logo": "/assets/0x36bEE8F2DF69Cf3AFAb5c5ccA973fEb6441cAb11/logo.png"
   },
   {
-    "address": "0x988A89F9469D3B2D7BDbd4Af2b4B39D61701F3eC" as `0x${string}`,
+    "address": "0x795ff63d8Df87520d2430E26Ba858dc6c4385737" as `0x${string}`,
     "name": "Honey",
     "symbol": "HNY",
     "decimals": 18,
-    "logo": "/assets/0x988A89F9469D3B2D7BDbd4Af2b4B39D61701F3eC/logo.png"
+    "logo": "/assets/0x795ff63d8Df87520d2430E26Ba858dc6c4385737/logo.png"
   },
   {
-    "address": "0xd7569Bd95be12b864aAba642721D03063352c896" as `0x${string}`,
+    "address": "0x3A882b511D705FeE471B1276f106adB7f3680915" as `0x${string}`,
     "name": "Zilliqa",
     "symbol": "ZIL",
     "decimals": 18,
-    "logo": "/assets/0xd7569Bd95be12b864aAba642721D03063352c896/logo.png"
+    "logo": "/assets/0x3A882b511D705FeE471B1276f106adB7f3680915/logo.png"
   },
   {
     "address": "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`,

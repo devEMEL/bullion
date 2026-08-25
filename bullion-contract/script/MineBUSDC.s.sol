@@ -27,7 +27,7 @@ contract MineBUSDC is Script {
     }
 
     // Run this offline first to find the salt:
-    // forge script script/MineMUSDC.s.sol --sig "mine()" --rpc-url sepolia
+    // forge script script/MineBUSDC.s.sol --sig "mine()" --rpc-url sepolia
     function mine() external view {
         address deployer = msg.sender;
         bytes32 initCodeHash = hashInitCode(

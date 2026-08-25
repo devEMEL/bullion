@@ -45,6 +45,7 @@ export FEE_DISTRIBUTION_ACTIVE="${FEE_DISTRIBUTION_ACTIVE:-true}"
 : "${GEMFOT_MANAGER:?set GEMFOT_MANAGER}"
 : "${LAUNCH:?set LAUNCH}"
 : "${PREVENT_NO_FAIR_LAUNCH:?set PREVENT_NO_FAIR_LAUNCH}"
+: "${PREMINE_SUBSCRIBER:?set PREMINE_SUBSCRIBER}"
 : "${BLANK_ACTION:?set BLANK_ACTION}"
 : "${BURN_TOKENS_ACTION:?set BURN_TOKENS_ACTION}"
 : "${BUY_BACK_ACTION:?set BUY_BACK_ACTION}"
@@ -123,6 +124,7 @@ send "GemFotManager.setLaunch"       "${GEMFOT_MANAGER}" "setLaunch(address)"   
 send "GemFotManager.setInitialPrice" "${GEMFOT_MANAGER}" "setInitialPrice(address)" "${INITIAL_PRICE}"
 send "GemFotManager.setFeeDistribution" "${GEMFOT_MANAGER}" "setFeeDistribution((uint24,uint24,bool))" \
     "(${SWAP_FEE},${PROTOCOL_FEE},${FEE_DISTRIBUTION_ACTIVE})"
+send "GemFotManager.setPremineContract" "${GEMFOT_MANAGER}" "setPremineContract(address)" "${PREMINE_SUBSCRIBER}"
 
 # --- {IndexerSubscriber} ----------------------------------------------------- #
 send "Indexer.setNotifierLaunch" "${INDEXER}" "setNotifierLaunch(address,address)" "${NOTIFIER}" "${LAUNCH}"
@@ -130,6 +132,7 @@ send "Indexer.setNotifierLaunch" "${INDEXER}" "setNotifierLaunch(address,address
 # --- {Notifier} subscribers -------------------------------------------------- #
 send "Notifier.subscribe(Indexer)"             "${NOTIFIER}" "subscribe(address,bytes)" "${INDEXER}"                0x
 send "Notifier.subscribe(PreventNoFairLaunch)" "${NOTIFIER}" "subscribe(address,bytes)" "${PREVENT_NO_FAIR_LAUNCH}" 0x
+send "Notifier.subscribe(PremineSubscriber)"   "${NOTIFIER}" "subscribe(address,bytes)" "${PREMINE_SUBSCRIBER}"     0x
 
 # --- {ProtocolFeeRecipient} / {FeeEscrowRegistry} ---------------------------- #
 send "ProtocolFeeRecipient.setFeeEscrow" "${PROTOCOL_FEE_RECIPIENT}" "setFeeEscrow(address,bool)" "${FEE_ESCROW}" true

@@ -412,11 +412,6 @@ contract GemFotManager is
         notifier.notifySubscribers(
             poolId,
             IHooks.afterInitialize.selector,
-            abi.encode(tokenId, _params)
-        );
-        notifier.notifySubscribers(
-            poolId,
-            IHooks.afterInitialize.selector,
             abi.encode(tokenId, _params, _params.nativeIn)
         );
     }
@@ -768,8 +763,6 @@ contract GemFotManager is
      * @return hookDeltaUnspecified_ The hook's delta in unspecified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
      */
 
-    //  function _afterSwap(address sender, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata hookData) internal override returns (bytes4 selector_, int128 hookDeltaUnspecified_)
-
     function _afterSwap(
         address _sender,
         PoolKey calldata _key,
@@ -833,9 +826,6 @@ contract GemFotManager is
         );
     }
 
-    function setPremineContract(address _premineContract) external onlyOwner {
-        premineContract = _premineContract;
-    }
 
     function buyFairLaunch(PoolKey calldata _key, uint256 _nativeIn) external {
         PoolId poolId = _key.toId();
@@ -851,18 +841,16 @@ contract GemFotManager is
             ? Currency.unwrap(_key.currency1)
             : Currency.unwrap(_key.currency0);
 
-        // Only the trusted premine contract can trigger a creator-premine buy.
-        // When it calls, the buyer/recipient is always resolved to the token's
-        // creator — never to msg.sender or any caller-supplied address — so
-        // there's no way to redirect premine tokens or funds elsewhere.
-        bool isPremineCall = msg.sender == premineContract;
-        address creator = IMemecoin(memecoinAddress).creator();
-        address buyer = isPremineCall ? creator : msg.sender;
-
+        // Only the trusted premine contract, acting while a premine claim is pending,
+        // can trigger a creator-premine buy. When it does, the buyer/recipient is always
+        // resolved to the token's creator — never to msg.sender or any caller-supplied
+        // address — so there's no way to redirect premine tokens or funds elsewhere.
         uint _launchesAt = launchesAt[poolId];
         int premineAmount = _tload(PoolId.unwrap(poolId));
 
-        bool isCreatorPremine = isPremineCall && premineAmount > 0;
+        bool isCreatorPremine = msg.sender == premineContract && premineAmount > 0;
+        address creator = IMemecoin(memecoinAddress).creator();
+        address buyer = isCreatorPremine ? creator : msg.sender;
 
         if (!isCreatorPremine) {
             if (_launchesAt > block.timestamp) {
@@ -1218,21 +1206,7 @@ contract GemFotManager is
         if (msg.sender != address(bidWall)) {
             revert CallerIsNotBidWall();
         }
-
-        // Ensure that the PoolKey that is being closed is valid and recognised on the protocol,
-        // otherwise we could processing issues and false positives in upcoming steps. We need to
-        // ensure that the PoolKey is recognised (by checking the hooks address is not zero) and
-        // that the PoolId matches when encoded.
-        PoolKey memory storedKey = _poolKeys[
-            address(_key.memecoin(nativeToken))
-        ];
-        if (
-            storedKey.hooks == IHooks(address(0)) ||
-            PoolId.unwrap(storedKey.toId()) != PoolId.unwrap(_key.toId())
-        ) {
-            revert UnknownPool(_key.toId());
-        }
-
+        
         // Action our BidWall closure via the {PoolManager} unlock
         poolManager.unlock(abi.encode(_CLOSE_BIDWALL, _key));
     }

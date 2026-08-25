@@ -58,6 +58,9 @@ export FEE_DISTRIBUTION_ACTIVE="${FEE_DISTRIBUTION_ACTIVE:-true}"
 # {Launch} ERC721 metadata base URI
 export BASE_URI="${BASE_URI:-}"                                     # e.g. https://api.gemfot.xyz/metadata/
 
+# {BUSDC} native token (CREATE2 vanity deployment via MineBUSDC.s.sol)
+export ADDRESS_TO_MINT_TO="${ADDRESS_TO_MINT_TO:-}"                 # genesis supply recipient; defaults to PROTOCOL_OWNER
+
 # ---------------------------------------------------------------------------- #
 #                                   HELPERS                                    #
 # ---------------------------------------------------------------------------- #
@@ -134,8 +137,32 @@ deploy() {
 #                                 DEPLOYMENTS                                  #
 # ---------------------------------------------------------------------------- #
 
-# 0. DEX & Foundation Infrastructure
-deploy BUSDC DeployBUSDC.s.sol:DeployBUSDC
+# 0. Native token: mine a CREATE2 salt for an 0x11-prefixed vanity address, then deploy
+#    {BUSDC} with it. The salt is persisted to .env at the end of this script so re-runs
+#    reuse it (and therefore the same BUSDC address) instead of mining again.
+#
+#    NOTE: `mine()` computes the CREATE2 address with `msg.sender` as the deployer, so the
+#    `--sender` here MUST stay identical to the broadcast sender in FORGE_FLAGS.
+if [[ -z "${BUSDC_SALT:-}" ]]; then
+    echo "==> Mining CREATE2 salt for BUSDC (0x11 vanity prefix) ..." >&2
+    MINE_OUTPUT="$(forge script script/MineBUSDC.s.sol --sig "mine()" --sender "${DEPLOYER}" -vvv 2>&1)"
+    echo "${MINE_OUTPUT}" >&2
+
+    BUSDC_SALT="$(printf '%s\n' "${MINE_OUTPUT}" | grep -Eo 'Salt found: .*' | tail -1 | awk '{print $NF}')"
+    if [[ -z "${BUSDC_SALT}" ]]; then
+        echo "!! Salt mining found no 0x11-prefix address within the search range" >&2
+        exit 1
+    fi
+    export BUSDC_SALT
+    echo "==> Mined BUSDC salt: ${BUSDC_SALT}"
+else
+    echo "==> Reusing BUSDC_SALT from environment: ${BUSDC_SALT}"
+fi
+
+# Recipient of the full genesis supply (minting is permanently disabled afterwards).
+export ADDRESS_TO_MINT_TO="${ADDRESS_TO_MINT_TO:-${PROTOCOL_OWNER}}"
+
+deploy BUSDC MineBUSDC.s.sol:MineBUSDC
 export NATIVE_TOKEN="${BUSDC}"
 
 deploy FAUCET_ADDRESS DeployFaucet.s.sol:DeployFaucet
@@ -199,6 +226,9 @@ export NOTIFIER="$(cast call "${GEMFOT_MANAGER}" "notifier()(address)" --rpc-url
 echo "==> Notifier (deployed by GemFotManager): ${NOTIFIER}"
 deploy PREVENT_NO_FAIR_LAUNCH DeployPreventNoFairLaunch.s.sol:DeployPreventNoFairLaunch
 
+# 13b. Premine subscriber (requires GEMFOT_MANAGER + LAUNCH, wired further below)
+deploy PREMINE_SUBSCRIBER DeployPremineSubscriber.s.sol:DeployPremineSubscriber
+
 
 # 14. Zaps
 deploy POOL_SWAP DeployPoolSwap.s.sol:DeployPoolSwap
@@ -234,6 +264,10 @@ cast send "${GEMFOT_MANAGER}" "setInitialPrice(address)" "${INITIAL_PRICE}" "${C
 cast send "${GEMFOT_MANAGER}" "setFeeDistribution((uint24,uint24,bool))" \
     "(${SWAP_FEE},${PROTOCOL_FEE},${FEE_DISTRIBUTION_ACTIVE})" "${CAST_SEND_FLAGS[@]}"
 
+# The manager only resolves `buyFairLaunch` calls from this contract as creator-premine
+# buys; without it the {PremineSubscriber} would be treated as a public buyer.
+cast send "${GEMFOT_MANAGER}" "setPremineContract(address)" "${PREMINE_SUBSCRIBER}" "${CAST_SEND_FLAGS[@]}"
+
 # --- {IndexerSubscriber} ----------------------------------------------------- #
 # Maps the notifier -> launch contract, without this the indexer silently no-ops.
 cast send "${INDEXER}" "setNotifierLaunch(address,address)" "${NOTIFIER}" "${LAUNCH}" "${CAST_SEND_FLAGS[@]}"
@@ -244,6 +278,7 @@ cast send "${INDEXER}" "setNotifierLaunch(address,address)" "${NOTIFIER}" "${LAU
 # and the {FeeEscrow} creator-fee lookups will fail.
 cast send "${NOTIFIER}" "subscribe(address,bytes)" "${INDEXER}"                0x "${CAST_SEND_FLAGS[@]}"
 cast send "${NOTIFIER}" "subscribe(address,bytes)" "${PREVENT_NO_FAIR_LAUNCH}" 0x "${CAST_SEND_FLAGS[@]}"
+cast send "${NOTIFIER}" "subscribe(address,bytes)" "${PREMINE_SUBSCRIBER}"     0x "${CAST_SEND_FLAGS[@]}"
 
 # --- {ProtocolFeeRecipient} / {FeeEscrowRegistry} ---------------------------- #
 cast send "${PROTOCOL_FEE_RECIPIENT}" "setFeeEscrow(address,bool)" "${FEE_ESCROW}" true  "${CAST_SEND_FLAGS[@]}"
@@ -290,6 +325,7 @@ GemFotManager (hook)           : ${GEMFOT_MANAGER}
 Launch                         : ${LAUNCH}
 Notifier                       : ${NOTIFIER}
 PreventNoFairLaunch            : ${PREVENT_NO_FAIR_LAUNCH}
+PremineSubscriber              : ${PREMINE_SUBSCRIBER}
 PoolSwap                       : ${POOL_SWAP}
 BlankAction                    : ${BLANK_ACTION}
 BurnTokensAction               : ${BURN_TOKENS_ACTION}
@@ -346,6 +382,7 @@ if [[ -f "${ENV_FILE}" ]]; then
 
     update_env_var "NATIVE_TOKEN" "${BUSDC}"
     update_env_var "BUSDC" "${BUSDC}"
+    update_env_var "BUSDC_SALT" "${BUSDC_SALT}"
     update_env_var "FAUCET_ADDRESS" "${FAUCET_ADDRESS}"
     update_env_var "PERMIT2_ADDRESS" "${PERMIT2_ADDRESS}"
     update_env_var "POOL_MANAGER" "${POOL_MANAGER}"
@@ -369,6 +406,7 @@ if [[ -f "${ENV_FILE}" ]]; then
     update_env_var "LAUNCH" "${LAUNCH}"
     update_env_var "NOTIFIER" "${NOTIFIER}"
     update_env_var "PREVENT_NO_FAIR_LAUNCH" "${PREVENT_NO_FAIR_LAUNCH}"
+    update_env_var "PREMINE_SUBSCRIBER" "${PREMINE_SUBSCRIBER}"
     update_env_var "POOL_SWAP" "${POOL_SWAP}"
     update_env_var "BLANK_ACTION" "${BLANK_ACTION}"
     update_env_var "BURN_TOKENS_ACTION" "${BURN_TOKENS_ACTION}"

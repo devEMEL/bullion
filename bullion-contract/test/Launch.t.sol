@@ -190,7 +190,8 @@ contract LaunchTest is Test {
             launchAt: block.timestamp,
             totalSupply: 1000 ether,
             usdcMarketCap: 100_000e6,
-            multiple: 1
+            multiple: 1,
+            nativeIn: 0
         });
     }
 }

@@ -8,9 +8,9 @@ dataSources:
     name: GemFotManager
     network: liteforge
     source:
-      address: "0xB88770C9FE4C733EFb9dd259fc32F00979706fdC"
+      address: "0x9fd953946FD2f6DDD32C3a44c73373EaBfD36fDC"
       abi: GemFotManager
-      startBlock: 41490740
+      startBlock: 43744255
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -55,9 +55,9 @@ dataSources:
     name: FairLaunch
     network: liteforge
     source:
-      address: "0xC73c72Bff8135C01611473F8aC0318CD1cEd0266"
+      address: "0xE65220a143ae351B2fDDBE72739891AD7Db2cb59"
       abi: FairLaunch
-      startBlock: 41490740
+      startBlock: 43744255
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -81,9 +81,9 @@ dataSources:
     name: PoolManager
     network: liteforge
     source:
-      address: "0xF351A424955ba04e3d49dDa6E549a5983dB264B9"
+      address: "0xc7F528A2E6040fAb641ea2DeCCba9fb270f76Bb5"
       abi: PoolManager
-      startBlock: 41490740
+      startBlock: 43744255
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -111,9 +111,9 @@ dataSources:
     name: PositionManager
     network: liteforge
     source:
-      address: "0xf08E1E3EFF9d79F545E14179396004Ba92dA25B5"
+      address: "0x3A882b511D705FeE471B1276f106adB7f3680915"
       abi: PositionManager
-      startBlock: 41490740
+      startBlock: 43744255
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

@@ -29,60 +29,8 @@ import {ProtocolRoles} from "@gemfot/libraries/ProtocolRoles.sol";
 import {LinearBondingCurve} from "@gemfot/libraries/LinearBondingCurve.sol";
 import {IInitialPrice} from "@gemfot-interfaces/IInitialPrice.sol";
 import {IMemecoin} from "@gemfot-interfaces/IMemecoin.sol";
+import {BUSDC} from "@gemfot/BUSDC.sol";
 
-/**
- * Mock USDC token for testing (6 decimals to match real USDC)
- */
-contract MockUSDC is IERC20 {
-    string public constant name = "USD Coin";
-    string public constant symbol = "USDC";
-    uint8 public constant decimals = 6;
-
-    mapping(address => uint) private _balances;
-    mapping(address => mapping(address => uint)) private _allowances;
-    uint private _totalSupply;
-
-    function mint(address to, uint amount) external {
-        _balances[to] += amount;
-        _totalSupply += amount;
-        emit Transfer(address(0), to, amount);
-    }
-
-    function totalSupply() external view returns (uint) {
-        return _totalSupply;
-    }
-
-    function balanceOf(address account) external view returns (uint) {
-        return _balances[account];
-    }
-
-    function transfer(address to, uint amount) external returns (bool) {
-        _balances[msg.sender] -= amount;
-        _balances[to] += amount;
-        emit Transfer(msg.sender, to, amount);
-        return true;
-    }
-
-    function allowance(address owner, address spender) external view returns (uint) {
-        return _allowances[owner][spender];
-    }
-
-    function approve(address spender, uint amount) external returns (bool) {
-        _allowances[msg.sender][spender] = amount;
-        emit Approval(msg.sender, spender, amount);
-        return true;
-    }
-
-    function transferFrom(address from, address to, uint amount) external returns (bool) {
-        if (_allowances[from][msg.sender] != type(uint).max) {
-            _allowances[from][msg.sender] -= amount;
-        }
-        _balances[from] -= amount;
-        _balances[to] += amount;
-        emit Transfer(from, to, amount);
-        return true;
-    }
-}
 
 /**
  * Mock Indexer for FeeEscrow
@@ -109,7 +57,7 @@ contract GemFotManagerTest is Test {
     FeeExemptions feeExemptions;
     USDCMarketCappedPrice initialPrice;
     TreasuryActionManager actionManager;
-    MockUSDC usdc;
+    BUSDC busdc; // the protocol's native token
 
     address protocolOwner = makeAddr("protocolOwner");
     address protocolFeeRecipient = makeAddr("protocolFeeRecipient");
@@ -120,10 +68,10 @@ contract GemFotManagerTest is Test {
     Memecoin memecoinImplementation;
     MemecoinTreasury memecoinTreasuryImplementation;
 
-    // Test constants matching USDC decimals (6) and token decimals (18)
-    uint constant USDC_DECIMALS = 6;
+    // Test constants matching native token (bUSDC, 18 decimals) and memecoin decimals
+    uint constant NATIVE_DECIMALS = 18;
     uint constant TOKEN_DECIMALS = 18;
-    uint constant TARGET_MARKET_CAP = 100_000 * 10 ** USDC_DECIMALS; // $100k
+    uint constant TARGET_MARKET_CAP = 100_000 * 10 ** NATIVE_DECIMALS; // $100k
     uint constant TOTAL_SUPPLY = 1_000_000_000 * 10 ** TOKEN_DECIMALS; // 1B tokens
     uint constant FAIR_LAUNCH_SUPPLY = 500_000_000 * 10 ** TOKEN_DECIMALS; // 500M tokens
     uint constant FAIR_LAUNCH_DURATION = 7 days;
@@ -150,8 +98,11 @@ contract GemFotManagerTest is Test {
     function setUp() public {
         vm.warp(1 days); // Move away from timestamp 0
 
-        // Deploy mock USDC
-        usdc = new MockUSDC();
+        // Deploy the native token with its full genesis supply held by this test
+        // contract, then distribute to actors via transfers (minting is disabled).
+        busdc = new BUSDC(
+            "Bullion USDC", "bUSDC", uint8(NATIVE_DECIMALS), 10_000_000_000 * 10 ** NATIVE_DECIMALS, address(this)
+        );
 
         // Deploy Uniswap V4 PoolManager
         poolManager = new PoolManager(protocolOwner);
@@ -173,20 +124,20 @@ contract GemFotManagerTest is Test {
         MockIndexer indexer = new MockIndexer();
 
         // Deploy fee escrow
-        feeEscrow = new FeeEscrow(address(usdc), address(indexer));
+        feeEscrow = new FeeEscrow(address(busdc), address(indexer));
 
         // Deploy fair launch. The deployer receives `DEFAULT_ADMIN_ROLE`, so this test contract
         // retains the ability to grant the manager role below.
         fairLaunch = new FairLaunch(poolManager);
 
         // Deploy bid wall
-        bidWall = new BidWall(address(usdc), address(poolManager), protocolOwner);
+        bidWall = new BidWall(address(busdc), address(poolManager), protocolOwner);
 
         // Uniswap V4 validates that a hook contract lives at an address whose lowest bits
         // encode its enabled hook permissions. Rather than mining a salt, we etch the
         // GemFotManager bytecode onto a pre-computed address carrying the correct flags.
         GemFotManager.ConstructorParams memory constructorParams = GemFotManager.ConstructorParams({
-            nativeToken: address(usdc),
+            nativeToken: address(busdc),
             poolManager: poolManager,
             feeDistribution: FeeDistributor.FeeDistribution({
                 swapFee: 3_00, // 3%
@@ -230,10 +181,10 @@ contract GemFotManagerTest is Test {
         vm.prank(protocolOwner);
         manager.setLaunch(address(launchContract));
 
-        // Mint USDC to test addresses
-        usdc.mint(creator, 1_000_000 * 10 ** USDC_DECIMALS);
-        usdc.mint(buyer, 1_000_000 * 10 ** USDC_DECIMALS);
-        usdc.mint(stranger, 1_000_000 * 10 ** USDC_DECIMALS);
+        // Distribute native token to test addresses
+        busdc.transfer(creator, 1_000_000 * 10 ** NATIVE_DECIMALS);
+        busdc.transfer(buyer, 1_000_000 * 10 ** NATIVE_DECIMALS);
+        busdc.transfer(stranger, 1_000_000 * 10 ** NATIVE_DECIMALS);
     }
 
     /* -------------------------------------------------------------------------- */
@@ -242,7 +193,7 @@ contract GemFotManagerTest is Test {
 
     function test_ConstructorSetsCorrectParameters() public view {
         assertEq(address(manager.poolManager()), address(poolManager));
-        assertEq(address(manager.nativeToken()), address(usdc));
+        assertEq(address(manager.nativeToken()), address(busdc));
         assertEq(address(manager.initialPrice()), address(initialPrice));
         assertEq(address(manager.bidWall()), address(bidWall));
         assertEq(address(manager.fairLaunch()), address(fairLaunch));
@@ -263,7 +214,7 @@ contract GemFotManagerTest is Test {
 
         // Approve launch fee
         vm.startPrank(creator);
-        usdc.approve(address(manager), initialPrice.getLaunchingFee());
+        busdc.approve(address(manager), initialPrice.getLaunchingFee());
         address memecoin = manager.launch(params);
         vm.stopPrank();
 
@@ -276,7 +227,7 @@ contract GemFotManagerTest is Test {
         GemFotManager.LaunchParams memory params = _defaultLaunchParams();
 
         vm.startPrank(creator);
-        usdc.approve(address(manager), initialPrice.getLaunchingFee());
+        busdc.approve(address(manager), initialPrice.getLaunchingFee());
 
         vm.expectEmit(false, false, false, false);
         emit GemFotManager.PoolCreated(
@@ -299,7 +250,7 @@ contract GemFotManagerTest is Test {
         GemFotManager.LaunchParams memory params = _defaultLaunchParams();
 
         vm.startPrank(creator);
-        usdc.approve(address(manager), initialPrice.getLaunchingFee());
+        busdc.approve(address(manager), initialPrice.getLaunchingFee());
         address memecoin = manager.launch(params);
         vm.stopPrank();
 
@@ -317,11 +268,11 @@ contract GemFotManagerTest is Test {
         PoolKey memory key = manager.poolKey(memecoin);
 
         // Buy tokens during fair launch
-        uint buyAmount = 1_000 * 10 ** USDC_DECIMALS; // $1000 USDC
+        uint buyAmount = 1_000 * 10 ** NATIVE_DECIMALS; // $1000 USDC
         uint initialBalance = IERC20(memecoin).balanceOf(buyer);
 
         vm.startPrank(buyer);
-        usdc.approve(address(manager), buyAmount * 2); // Approve extra for fees
+        busdc.approve(address(manager), buyAmount * 2); // Approve extra for fees
         manager.buyFairLaunch(key, buyAmount);
         vm.stopPrank();
 
@@ -338,10 +289,10 @@ contract GemFotManagerTest is Test {
         vm.warp(block.timestamp + FAIR_LAUNCH_DURATION + 1);
         manager.closeExpiredFairLaunch(key);
 
-        uint buyAmount = 1_000 * 10 ** USDC_DECIMALS;
+        uint buyAmount = 1_000 * 10 ** NATIVE_DECIMALS;
 
         vm.startPrank(buyer);
-        usdc.approve(address(manager), buyAmount * 2);
+        busdc.approve(address(manager), buyAmount * 2);
         vm.expectRevert(FairLaunch.FairLaunchWindowHasClosed.selector);
         manager.buyFairLaunch(key, buyAmount);
         vm.stopPrank();
@@ -485,7 +436,8 @@ contract GemFotManagerTest is Test {
             launchAt: block.timestamp,
             totalSupply: TOTAL_SUPPLY,
             usdcMarketCap: TARGET_MARKET_CAP,
-            multiple: MULTIPLE
+            multiple: MULTIPLE,
+            nativeIn: 0
         });
     }
 
@@ -493,7 +445,7 @@ contract GemFotManagerTest is Test {
         GemFotManager.LaunchParams memory params = _defaultLaunchParams();
 
         vm.startPrank(creator);
-        usdc.approve(address(manager), initialPrice.getLaunchingFee());
+        busdc.approve(address(manager), initialPrice.getLaunchingFee());
         memecoin_ = manager.launch(params);
         vm.stopPrank();
     }
