@@ -8,6 +8,7 @@ import TokenDetail from '@/app/TokenDetail';
 import Portfolio from '@/app/Portfolio';
 import Faucet from '@/app/faucet/page';
 import TokenTransfer from '@/app/transfer/page';
+import Cover from '@/app/Cover';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/faucet" element={<Faucet />} />
                 <Route path="/transfer" element={<TokenTransfer />} />
+                <Route path="/cover" element={<Cover />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
