@@ -4,7 +4,6 @@ import {
   RefreshCw,
   Loader2,
   AlertTriangle,
-  Search,
   Flame,
   Sparkles,
   BarChart3,
@@ -211,7 +210,6 @@ function TopVolumeTokenRow({
   );
 }
 
-
 function TopEarningTokenRow({
   token,
   rank,
@@ -242,7 +240,7 @@ function TopEarningTokenRow({
 
 export default function Explore() {
   const { launches, loading, error, refetch } = useLaunches();
-  const { volume24h, volumeAllTime, trades24h, dexVolumeAllTime, dex24hVolume, feesAllTime } = useVolume();
+  const { dex24hVolume, feesAllTime } = useVolume();
   const { volumeTokens, earningTokens, loading: topLoading } = useTopTokens();
 
   // Build a quick address→imageUrl map from already-loaded launches
@@ -253,17 +251,12 @@ export default function Explore() {
     }
     return map;
   }, [launches]);
+
   const [filter, setFilter] = useState<Filter>('all');
   const [sort, setSort] = useState<Sort>('new');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const q = searchParams.get('q') ?? '';
 
-  const setQ = (value: string) => {
-    const next = new URLSearchParams(searchParams);
-    if (value.trim()) next.set('q', value);
-    else next.delete('q');
-    setSearchParams(next, { replace: true });
-  };
   const stats = useMemo(() => {
     const totalRaised = launches.reduce((acc, l) => acc + BigInt(l.revenue || '0'), 0n);
     const live = launches.filter((l) => l.isLive).length;
