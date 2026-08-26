@@ -20,7 +20,7 @@ import { useTopTokens, type TopVolumeToken, type TopEarningToken } from '@/hooks
 import { CONTRACTS } from '@/config/networks';
 import { calcExpectedRaise, countdown, fmtNative, progressPct, timeAgo } from '@/lib/format';
 
-type Filter = 'all' | 'live' | 'trading';
+type Filter = 'all' | 'live' | 'trading' | 'ended';
 type Sort = 'new' | 'raised' | 'progress';
 
 function CopyTicker({ symbol }: { symbol: string }) {
@@ -136,7 +136,7 @@ function LaunchBlock({ launch, index }: { launch: EnrichedLaunch; index: number 
           <span className="text-[13px] font-bold text-[#5865F2] tabular-nums">${calcExpectedRaise(launch.targetMarketCap, launch.multiple)}</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-[9px] font-bold uppercase tracking-wider text-white/35">Total Swaps</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider text-white/35">Total Fairlaunch Buy</span>
           <span className="text-[13px] font-bold text-white tabular-nums">{launch.buyCount}</span>
         </div>
       </div>
@@ -273,7 +273,8 @@ export default function Explore() {
   const visible = useMemo(() => {
     let list = launches;
     if (filter === 'live') list = list.filter((l) => l.isLive);
-    if (filter === 'trading') list = list.filter((l) => !l.isLive);
+    if (filter === 'trading') list = list.filter((l) => l.poolInitialized);
+    if (filter === 'ended') list = list.filter((l) => !l.isLive && !l.poolInitialized);
     if (q.trim()) {
       const needle = q.trim().toLowerCase();
       list = list.filter(
@@ -462,6 +463,7 @@ export default function Explore() {
                   ['all', 'All'],
                   ['live', 'Live'],
                   ['trading', 'Trading'],
+                  ['ended', 'Ended'],
                 ] as [Filter, string][]
               ).map(([key, label]) => (
                 <button
@@ -475,6 +477,7 @@ export default function Explore() {
                 >
                   {key === 'live' && <span className="w-1.5 h-1.5 rounded-full bg-[#5865F2] animate-pulse" />}
                   {key === 'trading' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                  {key === 'ended' && <span className="w-1.5 h-1.5 rounded-full bg-white/30" />}
                   {label}
                 </button>
               ))}
