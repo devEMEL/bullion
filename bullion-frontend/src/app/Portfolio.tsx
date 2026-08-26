@@ -183,7 +183,7 @@ export default function Portfolio() {
                 ))}
                 {launches.length === 0 && (
                   <p className="px-4 py-14 text-center text-white/40 text-[14px]">
-                    No Bullion tokens found in this wallet yet.
+                    No Bulion tokens found in this wallet yet.
                   </p>
                 )}
               </div>

@@ -226,7 +226,7 @@ export default function FaucetPage() {
       {/* Header section */}
       <header className="text-center max-w-2xl mx-auto mb-12 mt-4">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
-          Bullion Faucet
+          Bulion Faucet
         </h1>
         <p className="text-white/45 text-sm md:text-base leading-relaxed max-w-lg mx-auto">
           Claim native protocol tokens ({tokenSymbol}) distributed directly from the deployed protocol faucet reserve.

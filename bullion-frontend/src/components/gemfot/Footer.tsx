@@ -74,7 +74,7 @@ export default function Footer() {
 
         <div className="border-t border-white/[0.06] py-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/30">
-            © {new Date().getFullYear()} Bullion
+            © {new Date().getFullYear()} Bulion
           </p>
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/30">
             Testnet build — tokens have no real value

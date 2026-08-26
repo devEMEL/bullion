@@ -10,7 +10,7 @@ dataSources:
     source:
       address: "0x3B4D3ec4508e79115b7D9c94E72e970dCf5d2FDC"
       abi: GemFotManager
-      startBlock: 44029659
+      startBlock: 44237785
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -57,7 +57,7 @@ dataSources:
     source:
       address: "0x5Bd9a64a124a7ec0b64b3E19Bc1F70b894B1Fb12"
       abi: FairLaunch
-      startBlock: 44029659
+      startBlock: 44237785
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -83,7 +83,7 @@ dataSources:
     source:
       address: "0xDF6166bEf93B3aE8BFCe73225Dc5348c5A0Ad96A"
       abi: PoolManager
-      startBlock: 44029659
+      startBlock: 44237785
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -113,7 +113,7 @@ dataSources:
     source:
       address: "0xF611321abdeb9fbcb36C8238a694712f8B196392"
       abi: PositionManager
-      startBlock: 44029659
+      startBlock: 44237785
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

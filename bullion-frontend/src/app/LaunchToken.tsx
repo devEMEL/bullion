@@ -412,7 +412,7 @@ export default function LaunchToken() {
                   <input
                     value={form.name}
                     onChange={(e) => set('name', e.target.value)}
-                    placeholder="Bullion Token"
+                    placeholder="Bulion Token"
                     maxLength={40}
                     className="input-field w-full h-12 px-4 text-[15px]"
                   />
