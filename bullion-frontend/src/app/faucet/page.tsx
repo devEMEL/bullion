@@ -234,7 +234,7 @@ export default function FaucetPage() {
       </header>
 
       {/* Main Grid Layout */}
-      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start px-4">
+      <div className="w-full max-w-[1000px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start px-4 md:px-6">
         
         {/* Left Column: Asset Information & Faucet Balance */}
         <div className="flex flex-col gap-6">

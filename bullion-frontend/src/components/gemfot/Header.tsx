@@ -77,14 +77,12 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-[#0B0E17]/90 backdrop-blur-xl border-b border-white/[0.08] h-[76px]">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-6 h-full flex items-center justify-between gap-4">
-        {/* Left: App Logo & Header Nav */}
-        <div className="flex items-center gap-6 shrink-0">
+    <header className="fixed top-0 inset-x-0 z-50 bg-[#070910]/95 backdrop-blur-xl border-b border-white/[0.08] h-[64px]">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-5 h-full flex items-center justify-between gap-3">
+        <div className="flex items-center gap-5 shrink-0">
           <Logo />
 
-          {/* Top Header Navigation Items without icons */}
-          <nav className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/[0.06]">
+          <nav className="hidden md:flex items-center gap-0.5 bg-white/5 p-0.5 rounded-lg border border-white/[0.06]">
             {NAV_ITEMS.map((item) => {
               const isActive =
                 item.path === '/'
@@ -96,7 +94,7 @@ export default function Header() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className="px-4 py-1.5 rounded-full text-[13px] font-black bg-[#5865F2] text-white hover:brightness-110 transition-all shadow-[0_0_12px_rgba(88,101,242,0.4)]"
+                    className="px-3 py-1.5 rounded-md text-[12px] font-bold bg-[#5865F2]/15 border border-[#5865F2]/40 text-[#9FA6F8] hover:bg-[#5865F2] hover:text-white transition-all"
                   >
                     {item.label}
                   </Link>
@@ -107,9 +105,9 @@ export default function Header() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-4 py-1.5 rounded-full text-[13px] font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all ${
                     isActive
-                      ? 'bg-white/15 text-white shadow-sm'
+                      ? 'bg-white/15 text-white'
                       : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}
                 >
@@ -120,23 +118,21 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* Center: Token Search Bar */}
         <div className="flex-1 max-w-md mx-2">
           <form onSubmit={handleSearchSubmit} className="relative w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
             <input
               type="text"
               placeholder="Search tokens..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 bg-black/50 border border-white/10 rounded-full pl-10 pr-4 text-sm text-white placeholder-white/35 focus:outline-none focus:border-primary/80 focus:bg-black/80 transition-all font-medium"
+              className="w-full h-9 bg-black/40 border border-white/10 rounded-lg pl-9 pr-3 text-[13px] text-white placeholder-white/35 focus:outline-none focus:border-[#5865F2]/60 transition-all font-medium"
             />
           </form>
         </div>
 
-        {/* Right: Wallet & Mobile Toggle */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-semibold text-white/40 border border-white/5 bg-white/[0.02] px-3 py-1.5 rounded-full">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-semibold text-white/40 border border-white/5 bg-white/[0.02] px-2.5 py-1.5 rounded-lg">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             {activeNetwork.label}
           </div>
@@ -145,7 +141,7 @@ export default function Header() {
             {!isConnected ? (
               <button
                 onClick={() => open()}
-                className="h-10 px-5 text-[13px] font-bold rounded-full bg-primary text-black hover:brightness-110 transition-all shadow-[0_2px_14px_rgba(255,210,23,0.35)] cursor-pointer flex items-center justify-center"
+                className="h-9 px-4 text-[12px] font-bold rounded-lg bg-[#5865F2] text-white hover:brightness-110 transition-all cursor-pointer"
               >
                 Connect Wallet
               </button>
@@ -153,17 +149,17 @@ export default function Header() {
               <>
                 <button
                   onClick={() => setDropdown((v) => !v)}
-                  className="flex items-center gap-2.5 h-10 pl-2 pr-3 rounded-full bg-[#121624] hover:bg-[#161B2E] transition-colors cursor-pointer border border-white/[0.1] shadow-md"
+                  className="flex items-center gap-2 h-9 pl-1.5 pr-2.5 rounded-lg bg-[#121624] hover:bg-[#161B2E] transition-colors cursor-pointer border border-white/[0.1]"
                 >
-                  <Avatar address={address!} size={26} />
+                  <Avatar address={address!} size={24} />
                   <div className="flex flex-col items-start leading-tight gap-0.5">
-                    <span className="text-[12px] font-bold text-white tracking-tight">{short}</span>
+                    <span className="text-[11px] font-bold text-white">{short}</span>
                     <span className="text-[10px] font-semibold text-white/45 font-mono">
                       {bal} {CONTRACTS.nativeTokenSymbol || 'bUSDC'}
                     </span>
                   </div>
                   <ChevronDown
-                    size={14}
+                    size={13}
                     className={`text-white/40 transition-transform ${dropdown ? 'rotate-180' : ''}`}
                   />
                 </button>
@@ -217,16 +213,15 @@ export default function Header() {
           <button
             onClick={() => setMobileMenuOpen((v) => !v)}
             aria-label="Toggle Navigation"
-            className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white"
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-white/10 text-white"
           >
-            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-white/10 bg-[#0B0E17]/95 px-4 py-4 space-y-2">
+        <div className="md:hidden border-b border-white/10 bg-[#070910] px-4 py-3 space-y-1">
           {NAV_ITEMS.map((item) => {
             const isActive =
               item.path === '/'
@@ -238,7 +233,7 @@ export default function Header() {
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 rounded-xl text-[14px] font-bold ${
+                className={`block px-3 py-2.5 rounded-lg text-[13px] font-bold ${
                   item.isHighlight
                     ? 'bg-[#5865F2] text-white'
                     : isActive

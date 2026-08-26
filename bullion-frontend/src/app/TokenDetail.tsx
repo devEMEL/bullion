@@ -27,12 +27,12 @@ import Erc20Abi from '@/abi/ERC20.json';
 
 function StatPill({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="bg-[#121624] rounded-2xl px-4 py-3.5 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] min-w-0">
-      <p className="text-[11px] font-semibold text-white/40 truncate">{label}</p>
-      <p className="text-[18px] font-extrabold text-white tabular-nums leading-tight mt-1 truncate">
+    <div className="bg-[#121624] rounded-xl px-3 py-2 border border-white/[0.08] min-w-0">
+      <p className="text-[10px] font-semibold text-white/40 truncate">{label}</p>
+      <p className="text-[14px] font-bold text-white tabular-nums leading-tight mt-0.5 truncate">
         {value}
       </p>
-      {hint && <p className="text-[10px] font-medium text-white/30 mt-0.5 truncate">{hint}</p>}
+      {hint && <p className="text-[9px] font-medium text-white/30 mt-0.5 truncate">{hint}</p>}
     </div>
   );
 }
@@ -183,18 +183,18 @@ function TokenInfoCard({
   ];
 
   return (
-    <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-      <h3 className="text-[15px] font-extrabold text-white mb-4">Info</h3>
-      <div className="grid grid-cols-2 gap-3">
+    <div className="bg-[#121624] rounded-xl p-3 border border-white/[0.08]">
+      <h3 className="text-[12px] font-bold text-white mb-2">Info</h3>
+      <div className="grid grid-cols-2 gap-1.5">
         {items.map((item) => (
-          <div key={item.label} className="rounded-2xl bg-white/5 border border-white/[0.06] px-3.5 py-3 min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/35 truncate">{item.label}</p>
-            <p className="text-[14px] font-extrabold text-white mt-1 truncate tabular-nums">{item.value}</p>
+          <div key={item.label} className="rounded-lg bg-white/5 border border-white/[0.06] px-2.5 py-2 min-w-0">
+            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-white/35 truncate">{item.label}</p>
+            <p className="text-[12px] font-bold text-white mt-0.5 truncate tabular-nums">{item.value}</p>
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 px-1">
-        <span className="text-[12px] font-medium text-white/40">Status</span>
+      <div className="mt-2 flex items-center justify-between gap-2 px-0.5">
+        <span className="text-[11px] font-medium text-white/40">Status</span>
         <span className={`chip ${launch.isLive ? 'chip-live' : launch.isScheduled ? 'text-amber-300 bg-amber-500/10 border-amber-500/20' : launch.fairLaunchClosed ? '' : 'chip-ink'}`}>
           {launch.fairLaunchClosed ? 'Closed' : launch.isScheduled ? 'Scheduled' : launch.isLive ? 'Live' : isGraduated ? 'Graduated' : 'Ended'}
         </span>
@@ -340,17 +340,16 @@ function TradeWidget({
   const isSellDisabledInFairLaunch = side === 'sell' && !launch.isGraduated;
 
   return (
-    <div className="bg-[#121624] text-white rounded-[28px] p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-      <h3 className="text-[18px] font-extrabold text-white text-center mb-5">
+    <div className="bg-[#121624] text-white rounded-xl p-3.5 border border-white/[0.08]">
+      <h3 className="text-[13px] font-bold text-white text-center mb-3">
         Trade {launch.symbol}
       </h3>
 
-      {/* Buy / Sell Pill Switcher */}
-      <div className="bg-white/5 p-1 rounded-2xl flex items-center mb-5 border border-white/[0.06]">
+      <div className="bg-white/5 p-0.5 rounded-lg flex items-center mb-3 border border-white/[0.06]">
         <button
           onClick={() => setSide('buy')}
-          className={`flex-1 py-2.5 rounded-xl text-[14px] font-extrabold transition-all cursor-pointer ${side === 'buy'
-              ? 'bg-white text-black shadow-md'
+          className={`flex-1 py-1.5 rounded-md text-[12px] font-bold transition-all cursor-pointer ${side === 'buy'
+              ? 'bg-white text-black'
               : 'text-white/50 hover:text-white'
             }`}
         >
@@ -358,8 +357,8 @@ function TradeWidget({
         </button>
         <button
           onClick={() => setSide('sell')}
-          className={`flex-1 py-2.5 rounded-xl text-[14px] font-extrabold transition-all cursor-pointer ${side === 'sell'
-              ? 'bg-white text-black shadow-md'
+          className={`flex-1 py-1.5 rounded-md text-[12px] font-bold transition-all cursor-pointer ${side === 'sell'
+              ? 'bg-white text-black'
               : 'text-white/50 hover:text-white'
             }`}
         >
@@ -367,23 +366,21 @@ function TradeWidget({
         </button>
       </div>
 
-      {/* Main Input Display */}
-      <div className="text-center mb-5">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/40 mb-2">
-          {currentTokenSymbol} AMOUNT
+      <div className="text-center mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/40 mb-1">
+          {currentTokenSymbol} amount
         </p>
         <input
           value={amount}
           onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
           placeholder="0"
           inputMode="decimal"
-          className="w-full text-center text-[38px] font-black text-white bg-transparent border-none outline-none placeholder:text-white/20 tabular-nums"
+          className="w-full text-center text-[28px] font-black text-white bg-transparent border-none outline-none placeholder:text-white/20 tabular-nums"
         />
       </div>
 
-      {/* Preset Amount Pills */}
       {side === 'buy' ? (
-        <div className="flex items-center justify-center gap-2 mb-5">
+        <div className="flex items-center justify-center gap-1.5 mb-3">
           {['10%', '25%', '50%', '100%'].map((pctStr) => (
             <button
               key={pctStr}
@@ -392,14 +389,14 @@ function TradeWidget({
                 const calcAmt = (currentBalNum * pctVal) / 100;
                 setAmount(calcAmt ? String(calcAmt) : '');
               }}
-              className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 text-[13px] font-bold transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 text-[11px] font-bold transition-all cursor-pointer"
             >
               {pctStr}
             </button>
           ))}
         </div>
       ) : (
-        <div className="flex items-center justify-center gap-2 mb-5">
+        <div className="flex items-center justify-center gap-1.5 mb-3">
           {['10%', '25%', '50%', '100%'].map((pctStr) => (
             <button
               key={pctStr}
@@ -408,7 +405,7 @@ function TradeWidget({
                 const calcAmt = (tokenBalNum * pctVal) / 100;
                 setAmount(calcAmt ? String(calcAmt) : '');
               }}
-              className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 text-[13px] font-bold transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 text-[11px] font-bold transition-all cursor-pointer"
             >
               {pctStr}
             </button>
@@ -416,11 +413,10 @@ function TradeWidget({
         </div>
       )}
 
-      {/* Estimated Receive output during Fair Launch buy */}
       {side === 'buy' && amount && Number(amount) > 0 && !launch.isGraduated && (
-        <div className="mb-4 px-4 py-2.5 bg-[rgba(88,101,242,0.12)] border border-[rgba(88,101,242,0.25)] rounded-2xl flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-white/50">Estimated receive</span>
-          <span className="text-[13px] font-extrabold text-[#5865F2] tabular-nums">
+        <div className="mb-2.5 px-3 py-2 bg-[rgba(88,101,242,0.12)] border border-[rgba(88,101,242,0.25)] rounded-lg flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold text-white/50">Est. receive</span>
+          <span className="text-[12px] font-bold text-[#5865F2] tabular-nums truncate">
             ≈{' '}
             {fmtToken(
               (() => {
@@ -442,11 +438,10 @@ function TradeWidget({
         </div>
       )}
 
-      {/* Estimated Receive output during DEX swap */}
       {launch.isGraduated && amount && Number(amount) > 0 && dexPool && dexOutputAmount && !dexQuoteError && (
-        <div className="mb-4 px-4 py-2.5 bg-[rgba(88,101,242,0.12)] border border-[rgba(88,101,242,0.25)] rounded-2xl flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-white/50">Estimated receive</span>
-          <span className="text-[13px] font-extrabold text-[#5865F2] tabular-nums">
+        <div className="mb-2.5 px-3 py-2 bg-[rgba(88,101,242,0.12)] border border-[rgba(88,101,242,0.25)] rounded-lg flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold text-white/50">Est. receive</span>
+          <span className="text-[12px] font-bold text-[#5865F2] tabular-nums truncate">
             ≈ {dexOutputAmount}{' '}
             {side === 'buy' ? launch.symbol : CONTRACTS.nativeTokenSymbol}
           </span>
@@ -454,19 +449,18 @@ function TradeWidget({
       )}
 
       {dexQuoteError && launch.isGraduated && amount && Number(amount) > 0 && (
-        <p className="mb-4 text-[12px] text-red-400 text-center break-words leading-relaxed">
+        <p className="mb-2 text-[11px] text-red-400 text-center break-words">
           {dexQuoteError}
         </p>
       )}
 
       {dexPoolFetchError && launch.isGraduated && (
-        <p className="mb-4 text-[12px] text-red-400 text-center break-words leading-relaxed">
+        <p className="mb-2 text-[11px] text-red-400 text-center break-words">
           {dexPoolFetchError}
         </p>
       )}
 
-      {/* Balance Row */}
-      <div className="flex items-center justify-center gap-2 text-[13px] font-semibold text-white/50 mb-3">
+      <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-white/50 mb-1.5">
         <span>
           Balance: {currentBalNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} {currentTokenSymbol}
         </span>
@@ -478,8 +472,7 @@ function TradeWidget({
         </button>
       </div>
 
-      {/* Slippage Dropdown Selector */}
-      <div className="flex items-center justify-center gap-1 text-[12px] font-semibold text-white/40 mb-6">
+      <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-white/40 mb-3">
         <span>Max slippage:</span>
         <button
           onClick={() => {
@@ -494,24 +487,23 @@ function TradeWidget({
         </button>
       </div>
 
-      {/* Action Button */}
       {isSellDisabledInFairLaunch ? (
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center text-white/50 text-[13px] font-semibold">
+        <div className="p-2.5 rounded-lg bg-white/5 border border-white/10 text-center text-white/50 text-[11px] font-semibold">
           Selling opens once token graduates to DEX
         </div>
       ) : launch.isScheduled ? (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center text-amber-300 text-[13px] font-bold">
+        <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center text-amber-300 text-[11px] font-bold">
           Fair launch starts in {countdown(Number(launch.fairLaunchStartsAt))}
         </div>
       ) : (
         <button
           onClick={onSwap}
           disabled={!isConnected || isBusy || !amount || Number(amount) <= 0}
-          className="btn btn-primary w-full h-14 py-3.5 text-[16px] font-extrabold rounded-2xl shadow-lg cursor-pointer"
+          className="btn btn-primary w-full h-10 text-[13px] font-bold rounded-lg cursor-pointer"
         >
           {isBusy ? (
             <span className="flex items-center justify-center gap-2">
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={14} className="animate-spin" />
               {step === 'approving'
                 ? 'Approving…'
                 : step === 'signing'
@@ -527,7 +519,7 @@ function TradeWidget({
       )}
 
       {swapError && (
-        <p className="mt-3 text-[12px] text-red-400 text-center break-words leading-relaxed">
+        <p className="mt-2 text-[11px] text-red-400 text-center break-words">
           {swapError}
         </p>
       )}
@@ -537,9 +529,9 @@ function TradeWidget({
           href={explorerTx(txHash)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 flex items-center justify-center gap-2 text-[12px] font-bold text-[#5865F2] hover:text-[#7983F5]"
+          className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#5865F2] hover:text-[#7983F5]"
         >
-          <Check size={12} />
+          <Check size={11} />
           Trade confirmed — view tx
         </a>
       )}

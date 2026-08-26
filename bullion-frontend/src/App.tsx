@@ -13,9 +13,9 @@ export default function App() {
   return (
     <Providers>
       <BrowserRouter>
-        <div className="flex flex-col min-h-screen bg-[#0B0E17] text-white">
+        <div className="flex flex-col min-h-screen bg-[#070910] text-white">
           <Header />
-          <div className="flex-1 pt-[76px] flex flex-col min-h-screen">
+          <div className="flex-1 pt-[64px] flex flex-col min-h-screen">
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Explore />} />

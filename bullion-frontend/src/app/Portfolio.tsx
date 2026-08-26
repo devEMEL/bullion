@@ -116,7 +116,7 @@ export default function Portfolio() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-[1100px] mx-auto px-4 md:px-6 py-6 md:py-8">
+      <div className="max-w-[800px] mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Hero balance card */}
         <div className="bg-[#121624] rounded-[28px] p-6 md:p-8 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] mb-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

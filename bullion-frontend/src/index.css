@@ -33,9 +33,9 @@
   --color-accent: #5865F2;
   --color-danger: #ef4444;
 
-  /* Dark FOMO surfaces */
-  --color-cream: #0B0E17;
-  --color-cream-deep: #070910;
+  /* Surfaces — app bg matches footer */
+  --color-cream: #070910;
+  --color-cream-deep: #05070c;
   --color-paper: #121624;
   --color-ink: #F1F3F9;
   --color-ink-soft: #9AA1B8;
@@ -43,7 +43,7 @@
   --color-rule: rgba(255, 255, 255, 0.08);
   --color-rule-soft: rgba(255, 255, 255, 0.05);
   --color-card: #121624;
-  --color-background: #0B0E17;
+  --color-background: #070910;
   --color-border: rgba(255, 255, 255, 0.08);
   --color-muted: #161B2E;
   --color-muted-foreground: #5F6682;
@@ -53,14 +53,14 @@
   --gradient-pink-sky: linear-gradient(90deg, #5865F2 0%, #60A5FA 100%);
   --gradient-pink-violet: linear-gradient(90deg, #5865F2 0%, #8B5CF6 100%);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
-  --radius-3xl: 28px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 16px;
   --radius-full: 9999px;
-  --radius-DEFAULT: 12px;
+  --radius-DEFAULT: 8px;
 
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2);
   --shadow-card-hover: 0 10px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(85, 85, 255, 0.15);
@@ -88,10 +88,10 @@
 html,
 body,
 #root {
-  background-color: #090a10;
+  background-color: #070910;
   color: #f1f3f9;
   font-family: "GemFot Sans", "Raleway", ui-sans-serif, sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   font-variant-numeric: lining-nums tabular-nums;
   -webkit-font-smoothing: antialiased;
@@ -99,10 +99,8 @@ body,
 }
 
 body {
-  background-color: #090a10;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(85, 85, 255, 0.12), transparent),
-    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(67, 97, 238, 0.06), transparent);
+  background-color: #070910;
+  background-image: none;
   background-attachment: fixed;
 }
 

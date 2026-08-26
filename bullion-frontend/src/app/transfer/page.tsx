@@ -247,7 +247,7 @@ export default function TokenTransferPage() {
       </header>
 
       {/* Main Form Card */}
-      <div className="w-full max-w-[840px] bg-[#0F1322]/80 border border-white/[0.08] backdrop-blur-xl rounded-2xl p-6 md:p-10 shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-[800px] mx-auto bg-[#0F1322]/80 border border-white/[0.08] backdrop-blur-xl rounded-2xl p-6 md:p-10 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-primary/80 via-blue-500/80 to-primary/80" />
 
         <form onSubmit={handleTransfer} className="space-y-6">

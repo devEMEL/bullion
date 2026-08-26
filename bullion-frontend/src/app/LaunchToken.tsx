@@ -349,7 +349,7 @@ export default function LaunchToken() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-[980px] mx-auto px-4 md:px-8 py-4 md:py-6">
+      <div className="max-w-[800px] mx-auto px-4 md:px-8 py-4 md:py-6">
         <div className="text-center mb-6">
           <h1 className="text-[28px] md:text-[36px] font-extrabold tracking-tight text-white">
             Launch your memecoin
