@@ -349,8 +349,8 @@ function TradeWidget({
         <button
           onClick={() => setSide('buy')}
           className={`flex-1 py-1.5 rounded-md text-[12px] font-bold transition-all cursor-pointer ${side === 'buy'
-              ? 'bg-white text-black'
-              : 'text-white/50 hover:text-white'
+            ? 'bg-white text-black'
+            : 'text-white/50 hover:text-white'
             }`}
         >
           Buy
@@ -358,8 +358,8 @@ function TradeWidget({
         <button
           onClick={() => setSide('sell')}
           className={`flex-1 py-1.5 rounded-md text-[12px] font-bold transition-all cursor-pointer ${side === 'sell'
-              ? 'bg-white text-black'
-              : 'text-white/50 hover:text-white'
+            ? 'bg-white text-black'
+            : 'text-white/50 hover:text-white'
             }`}
         >
           Sell
@@ -559,6 +559,7 @@ function DexPoolAnalytics({
   const [loading, setLoading] = useState(true);
   const [swapsPage, setSwapsPage] = useState(0);
   const [hoveredPoint, setHoveredPoint] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'trade' | 'info' | 'transactions'>('trade');
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -731,7 +732,7 @@ function DexPoolAnalytics({
         </div>
 
         {/* Chart + side panel skeleton */}
-        <div className="grid lg:grid-cols-[1.55fr_1fr] gap-5 items-start">
+        <div className="grid lg:grid-cols-2 gap-5 items-stretch">
           {/* Chart skeleton */}
           <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] min-h-[380px] flex flex-col gap-4">
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
@@ -833,16 +834,16 @@ function DexPoolAnalytics({
         ))}
       </div>
 
-      {/* Main Grid: Chart + Trade Widget, TVL & Info Card */}
-      <div className="grid lg:grid-cols-[1.55fr_1fr] gap-5 items-start">
-        {/* Price Chart */}
-        <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-md flex flex-col justify-between min-h-[380px]">
+      {/* Main Grid: Price Chart (Left) vs Right Side Tabs (Trade, Info, Transactions) */}
+      <div className="grid lg:grid-cols-2 gap-5 items-stretch">
+        {/* Left Side: Price History Chart */}
+        <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] flex flex-col justify-between h-full min-h-[440px]">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-[12px] font-bold text-white/40 uppercase tracking-[0.08em]">Price History</span>
               </div>
-              <span className="text-[11px] font-semibold text-[#5865F2] bg-[#5865F2]/10 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-semibold text-[#5865F2] bg-[#5865F2]/10 px-2.5 py-1 rounded-full border border-[#5865F2]/20">
                 Uniswap V4 Pool
               </span>
             </div>
@@ -861,7 +862,7 @@ function DexPoolAnalytics({
             </div>
           </div>
 
-          <div className="relative flex-1 min-h-[160px] flex items-end mt-4">
+          <div className="relative flex-1 min-h-[240px] flex items-end mt-4">
             {swaps.length === 0 ? (
               <div className="absolute inset-0 flex items-center justify-center text-white/30 text-[13px] font-semibold">
                 No swap history available
@@ -872,126 +873,521 @@ function DexPoolAnalytics({
           </div>
         </div>
 
-        {/* Inline Trade Widget + TVL & Info Card */}
-        <div className="space-y-5">
-          <TradeWidget launch={launch} tokenAddress={tokenAddress} refetchLaunch={refetchLaunch} />
-          <TokenInfoCard launch={launch} marketCap={currentMarketCap} fdv={targetCapUSD} />
-
-          <div className="bg-[#121624] rounded-[28px] p-6 border border-white/[0.08] shadow-md">
-            <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/35">Total Value Locked</p>
-            <p className="text-3xl font-extrabold text-white tabular-nums tracking-tight mt-2">
-              {formatCurrency(pool?.totalValueLockedUSD)}
-            </p>
+        {/* Right Side: Tabbed Panel (Trade, Info, Transactions) */}
+        <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] flex flex-col h-full">
+          {/* Segmented Tab Headers */}
+          <div className="flex bg-white/[0.04] p-1.5 rounded-2xl border border-white/[0.08] mb-5">
+            <button
+              onClick={() => setActiveTab('trade')}
+              className={`flex-1 py-2 rounded-xl text-[13px] font-extrabold transition-all cursor-pointer ${
+                activeTab === 'trade'
+                  ? 'bg-[#5865F2] text-white shadow-[0_2px_12px_rgba(88,101,242,0.4)]'
+                  : 'text-white/50 hover:text-white'
+              }`}
+            >
+              Trade
+            </button>
+            <button
+              onClick={() => setActiveTab('info')}
+              className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
+                activeTab === 'info'
+                  ? 'bg-[#5865F2] text-white shadow-[0_2px_12px_rgba(88,101,242,0.4)]'
+                  : 'text-white/50 hover:text-white'
+              }`}
+            >
+              Info
+            </button>
+            <button
+              onClick={() => setActiveTab('transactions')}
+              className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
+                activeTab === 'transactions'
+                  ? 'bg-[#5865F2] text-white shadow-[0_2px_12px_rgba(88,101,242,0.4)]'
+                  : 'text-white/50 hover:text-white'
+              }`}
+            >
+              Transactions
+            </button>
           </div>
 
-          <div className="bg-[#121624] rounded-[28px] p-6 border border-white/[0.08] shadow-md border-l-4 border-l-[#5865F2]">
-            <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/35 mb-4">Pool Balances</p>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-white/70">{pool?.token0?.symbol || 'Token0'}</span>
-                <span className="text-sm font-extrabold font-mono text-white tabular-nums">
-                  {Number(pool?.totalValueLockedToken0 || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                </span>
+          {/* Tab 1: Trade */}
+          {activeTab === 'trade' && (
+            <TradeWidget launch={launch} tokenAddress={tokenAddress} refetchLaunch={refetchLaunch} />
+          )}
+
+          {/* Tab 2: Info */}
+          {activeTab === 'info' && (
+            <div className="space-y-4">
+              <TokenInfoCard launch={launch} marketCap={currentMarketCap} fdv={targetCapUSD} />
+              
+              <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/[0.08]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/35">Total Value Locked</p>
+                <p className="text-2xl font-extrabold text-white tabular-nums tracking-tight mt-1">
+                  {formatCurrency(pool?.totalValueLockedUSD)}
+                </p>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-white/70">{pool?.token1?.symbol || 'Token1'}</span>
-                <span className="text-sm font-extrabold font-mono text-white tabular-nums">
-                  {Number(pool?.totalValueLockedToken1 || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                </span>
+
+              <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/[0.08] border-l-4 border-l-[#5865F2]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/35 mb-3">Pool Balances</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-white/70">{pool?.token0?.symbol || 'Token0'}</span>
+                    <span className="text-sm font-extrabold font-mono text-white tabular-nums">
+                      {Number(pool?.totalValueLockedToken0 || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-white/70">{pool?.token1?.symbol || 'Token1'}</span>
+                    <span className="text-sm font-extrabold font-mono text-white tabular-nums">
+                      {Number(pool?.totalValueLockedToken1 || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Tab 3: Transactions */}
+          {activeTab === 'transactions' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                <h3 className="text-[13px] font-extrabold text-white">Recent DEX Swaps</h3>
+                <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.1em]">
+                  {swaps.length} swaps
+                </span>
+              </div>
+
+              <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
+                {pagedSwaps.length > 0 ? (
+                  pagedSwaps.map((row: any) => {
+                    const formattedTime = new Date(Number(row.timestamp) * 1000).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+                    const isSellToken0 = Number(row.amount0) < 0;
+                    const nativeAddr = CONTRACTS.nativeToken.toLowerCase();
+                    const isToken0Native = pool?.token0?.id?.toLowerCase() === nativeAddr;
+                    const nativeAmount = isToken0Native ? Number(row.amount0) : Number(row.amount1);
+                    const usdValue = Math.abs(nativeAmount);
+
+                    const amount0Num = Math.abs(Number(row.amount0));
+                    const amount1Num = Math.abs(Number(row.amount1));
+
+                    return (
+                      <a
+                        key={row.id}
+                        href={explorerTx(row.transaction.id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.06] hover:border-[#5865F2]/40 rounded-2xl transition-all space-y-2.5 group cursor-pointer shadow-sm"
+                      >
+                        {/* Header: Type + USD value */}
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
+                              isSellToken0
+                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            }`}
+                          >
+                            {isSellToken0 ? `Sell ${pool?.token0?.symbol || 'Token'}` : `Buy ${pool?.token0?.symbol || 'Token'}`}
+                          </span>
+                          <span className="text-[13px] font-extrabold text-white tabular-nums group-hover:text-[#5865F2] transition-colors flex items-center gap-1">
+                            {formatCurrency(usdValue)}
+                            <ExternalLink size={11} className="opacity-40 group-hover:opacity-100 transition-opacity" />
+                          </span>
+                        </div>
+
+                        {/* Amounts Grid: Amount0 & Amount1 */}
+                        <div className="grid grid-cols-2 gap-2 text-[12px] pt-0.5">
+                          <div className="bg-white/[0.03] p-2 rounded-xl border border-white/[0.04]">
+                            <span className="text-[10px] font-bold text-white/40 block uppercase tracking-wider mb-0.5">
+                              {pool?.token0?.symbol || 'Amount 0'}
+                            </span>
+                            <span className="font-mono font-bold text-white tabular-nums">
+                              {amount0Num < 0.0001 ? '<0.0001' : amount0Num.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                            </span>
+                          </div>
+                          <div className="bg-white/[0.03] p-2 rounded-xl border border-white/[0.04] text-right">
+                            <span className="text-[10px] font-bold text-white/40 block uppercase tracking-wider mb-0.5">
+                              {pool?.token1?.symbol || 'Amount 1'}
+                            </span>
+                            <span className="font-mono font-bold text-white tabular-nums">
+                              {amount1Num < 0.0001 ? '<0.0001' : amount1Num.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Footer: Time & Tx Hash */}
+                        <div className="flex items-center justify-between text-[11px] text-white/35 pt-0.5 font-medium">
+                          <span>{formattedTime}</span>
+                          <span className="font-mono text-white/50 group-hover:text-[#5865F2] transition-colors">
+                            {row.transaction.id.slice(0, 6)}...{row.transaction.id.slice(-4)}
+                          </span>
+                        </div>
+                      </a>
+                    );
+                  })
+                ) : (
+                  <p className="py-8 text-center text-white/30 text-xs">No recent DEX swaps found</p>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {swaps.length > 10 && (
+                <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-white/30">Page {swapsPage + 1}</span>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={swapsPage === 0}
+                      onClick={() => setSwapsPage((prev) => Math.max(0, prev - 1))}
+                      className="btn btn-soft h-7 px-3 text-[11px] disabled:opacity-30 disabled:pointer-events-none"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      disabled={(swapsPage + 1) * 10 >= swaps.length}
+                      onClick={() => setSwapsPage((prev) => prev + 1)}
+                      className="btn btn-soft h-7 px-3 text-[11px] disabled:opacity-30 disabled:pointer-events-none"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Recent DEX Swaps Table */}
-      <div className="bg-[#121624] rounded-[28px] overflow-hidden border border-white/[0.08] shadow-md">
-        <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
-          <h3 className="text-[16px] font-extrabold text-white">Recent Swaps</h3>
-          <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.1em]">
-            {swaps.length} swaps
+function FairLaunchPriceChart({
+  launch,
+  currentPrice,
+  pct,
+}: {
+  launch: any;
+  currentPrice: number;
+  pct: number;
+}) {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<any>(null);
+
+  const pointsData = useMemo(() => {
+    if (!launch || !launch.buys) return [];
+    const sortedBuys = [...launch.buys].sort((a: any, b: any) => Number(a.timestamp) - Number(b.timestamp));
+    if (sortedBuys.length === 0) {
+      const createdAt = Number(launch.createdAtTimestamp) || Math.floor(Date.now() / 1000) - 3600;
+      const now = Math.floor(Date.now() / 1000);
+      return [
+        { time: createdAt, price: currentPrice, date: new Date(createdAt * 1000) },
+        { time: now, price: currentPrice, date: new Date(now * 1000) },
+      ];
+    }
+    const data: { time: number; price: number; date: Date }[] = [];
+    let lastTime = 0;
+    sortedBuys.forEach((buy: any) => {
+      let t = Number(buy.timestamp);
+      if (t <= lastTime) t = lastTime + 1;
+      let tokens = 1;
+      let native = 0;
+      try {
+        tokens = Number(formatUnits(BigInt(buy.tokensOut || '0'), 18)) || 1;
+        native = Number(formatUnits(BigInt(buy.nativeIn || '0'), CONTRACTS.nativeTokenDecimals)) || 0;
+      } catch {
+        tokens = Number(buy.tokensOut) || 1;
+        native = Number(buy.nativeIn) || 0;
+      }
+      const price = tokens > 0 ? native / tokens : currentPrice;
+      data.push({ time: t, price, date: new Date(t * 1000) });
+      lastTime = t;
+    });
+    return data;
+  }, [launch, currentPrice]);
+
+  useEffect(() => {
+    if (!chartContainerRef.current || pointsData.length === 0) return;
+    const container = chartContainerRef.current;
+
+    const chart = createChart(container, {
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: 'rgba(255, 255, 255, 0.4)',
+        fontFamily: 'Outfit, sans-serif',
+      },
+      grid: {
+        vertLines: { color: 'rgba(255, 255, 255, 0.02)' },
+        horzLines: { color: 'rgba(255, 255, 255, 0.02)' },
+      },
+      rightPriceScale: {
+        borderVisible: false,
+        textColor: 'rgba(255, 255, 255, 0.4)',
+      },
+      timeScale: {
+        borderVisible: false,
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      crosshair: {
+        vertLine: { color: 'rgba(255,255,255,0.15)', width: 1, style: 3, labelVisible: false },
+        horzLine: { color: 'rgba(255,255,255,0.15)', width: 1, style: 3, labelVisible: false },
+      },
+      handleScale: false,
+      handleScroll: false,
+      width: container.clientWidth || 500,
+      height: container.clientHeight || 200,
+    });
+
+    const candlestickSeries = chart.addSeries(CandlestickSeries, {
+      upColor: '#5865F2',
+      downColor: '#ef4444',
+      borderVisible: false,
+      wickUpColor: '#5865F2',
+      wickDownColor: '#ef4444',
+    });
+
+    const chartData: { time: number; open: number; high: number; low: number; close: number }[] = [];
+    let lastTime = 0;
+    pointsData.forEach((pt, idx) => {
+      let currentTime = pt.time;
+      if (currentTime <= lastTime) currentTime = lastTime + 1;
+      const prevPrice = idx > 0 ? pointsData[idx - 1].price : pt.price;
+      chartData.push({
+        time: currentTime,
+        open: prevPrice,
+        high: Math.max(prevPrice, pt.price),
+        low: Math.min(prevPrice, pt.price),
+        close: pt.price,
+      });
+      lastTime = currentTime;
+    });
+
+    candlestickSeries.setData(chartData as any);
+    chart.timeScale().fitContent();
+
+    chart.subscribeCrosshairMove((param) => {
+      if (!param.time) {
+        setHoveredPoint(null);
+      } else {
+        const timeVal = Number(param.time);
+        const pt = chartData.find((d) => d.time === timeVal);
+        if (pt) {
+          setHoveredPoint({ price: pt.close, date: new Date(pt.time * 1000) });
+        } else {
+          setHoveredPoint(null);
+        }
+      }
+    });
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (entries.length === 0 || !entries[0].contentRect) return;
+      const { width, height } = entries[0].contentRect;
+      chart.applyOptions({ width, height });
+      chart.timeScale().fitContent();
+    });
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+      chart.remove();
+    };
+  }, [pointsData]);
+
+  const links = launch.links ?? {};
+
+  return (
+    <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] flex flex-col justify-between h-full space-y-5">
+      <div>
+        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] font-bold text-white/40 uppercase tracking-[0.08em]">Price Chart</span>
+          </div>
+          <span className="text-[11px] font-semibold text-[#5865F2] bg-[#5865F2]/10 px-2.5 py-1 rounded-full border border-[#5865F2]/20">
+            Fair Launch Curve
           </span>
         </div>
 
-        <div className="hidden md:grid grid-cols-[1fr_1.5fr_1fr_1.2fr_1.2fr_1fr] gap-4 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-white/30 border-b border-white/[0.06] bg-white/[0.02]">
-          <div>Time</div>
-          <div>Type</div>
-          <div>USD</div>
-          <div>{pool?.token0?.symbol || 'Token0'}</div>
-          <div>{pool?.token1?.symbol || 'Token1'}</div>
-          <div className="text-right">Txn Hash</div>
+        <div className="mb-2">
+          <p className="text-3xl font-extrabold text-white tabular-nums tracking-tight">
+            {hoveredPoint ? formatPrice(hoveredPoint.price) : currentPrice ? formatPrice(currentPrice) : '—'}
+          </p>
+          <p className="text-[12px] font-medium text-white/40 font-mono mt-1">
+            {hoveredPoint ? hoveredPoint.date.toLocaleString() : ''}
+          </p>
         </div>
 
-        <div className="divide-y divide-white/[0.06]">
-          {pagedSwaps.length > 0 ? (
-            pagedSwaps.map((row: any) => {
-              const formattedTime = new Date(Number(row.timestamp) * 1000).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              });
-              const isSellToken0 = Number(row.amount0) < 0;
-              const typeText = `Swap ${isSellToken0 ? `${pool.token0.symbol} for ${pool.token1.symbol}` : `${pool.token1.symbol} for ${pool.token0.symbol}`}`;
-
-              // bUSDC is pegged 1:1 to USD, use its absolute amount as the USD value
-              const nativeAddr = CONTRACTS.nativeToken.toLowerCase();
-              const isToken0Native = pool.token0.id?.toLowerCase() === nativeAddr;
-              const nativeAmount = isToken0Native ? Number(row.amount0) : Number(row.amount1);
-              const usdValue = Math.abs(nativeAmount);
-
-              return (
-                <div
-                  key={row.id}
-                  className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1fr_1.2fr_1.2fr_1fr] gap-2 md:gap-4 px-6 py-3.5 items-center hover:bg-white/[0.03] transition-colors"
-                >
-                  <div className="text-[12px] font-medium text-white/50">{formattedTime}</div>
-                  <div className="text-[13px] font-bold text-white">{typeText}</div>
-                  <div className="text-[13px] font-bold text-white tabular-nums">{formatCurrency(usdValue)}</div>
-                  <div className={`text-[13px] font-bold tabular-nums ${isSellToken0 ? 'text-white/60' : 'text-[#5865F2]'}`}>
-                    {Number(row.amount0).toFixed(4)} {pool.token0.symbol}
-                  </div>
-                  <div className={`text-[13px] font-bold tabular-nums ${Number(row.amount1) < 0 ? 'text-white/60' : 'text-[#5865F2]'}`}>
-                    {Number(row.amount1).toFixed(4)} {pool.token1.symbol}
-                  </div>
-                  <div className="md:text-right">
-                    <a
-                      href={explorerTx(row.transaction.id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[12px] font-mono text-[#5865F2] hover:text-[#7983F5] inline-flex items-center gap-1"
-                    >
-                      {row.transaction.id.slice(0, 6)}...{row.transaction.id.slice(-4)}
-                      <ExternalLink size={10} />
-                    </a>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="p-8 text-center text-white/30 text-xs">No recent DEX swaps found</div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        <div className="p-4 border-t border-white/[0.08] flex items-center justify-between px-6 bg-white/[0.01]">
-          <span className="text-[12px] font-medium text-white/30">Page {swapsPage + 1}</span>
-          <div className="flex gap-3">
-            <button
-              disabled={swapsPage === 0}
-              onClick={() => setSwapsPage((prev) => Math.max(0, prev - 1))}
-              className="btn btn-soft h-8 px-4 text-[11px] disabled:opacity-30 disabled:pointer-events-none"
-            >
-              Prev
-            </button>
-            <button
-              disabled={(swapsPage + 1) * 10 >= swaps.length}
-              onClick={() => setSwapsPage((prev) => prev + 1)}
-              className="btn btn-soft h-8 px-4 text-[11px] disabled:opacity-30 disabled:pointer-events-none"
-            >
-              Next
-            </button>
-          </div>
+        <div className="relative w-full h-[200px] my-2">
+          <div ref={chartContainerRef} className="w-full h-full" />
         </div>
       </div>
+
+      {/* Curve progress section */}
+      <div className="pt-4 border-t border-white/[0.08]">
+        {launch.isScheduled && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                <Clock size={16} className="text-amber-400" />
+              </div>
+              <div>
+                <p className="text-[13px] font-extrabold text-amber-300">Fair Launch Starts Soon</p>
+                <p className="text-[11px] font-medium text-amber-200/70 mt-0.5">
+                  Opens {new Date(Number(launch.fairLaunchStartsAt) * 1000).toLocaleString(undefined, {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+            <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/30 text-[13px] font-extrabold text-amber-300 tabular-nums">
+              Starts in {countdown(Number(launch.fairLaunchStartsAt))}
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-baseline justify-between mb-2">
+          <span className="text-[13px] font-bold text-white/50">Curve filled</span>
+          <span className="text-[14px] font-extrabold text-[#5865F2] tabular-nums">
+            {pct.toFixed(2)}%
+          </span>
+        </div>
+        <div className={`meter ${launch.isLive ? 'meter-live' : ''}`}>
+          <span style={{ width: `${Math.min(Math.max(pct, 1), 100)}%` }} />
+        </div>
+
+        {launch.description && (
+          <p className="text-white/60 text-[14px] leading-relaxed mt-4 pt-4 border-t border-white/[0.08]">
+            {launch.description}
+          </p>
+        )}
+
+        {(links.website || links.twitter || links.telegram) && (
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            {links.website && (
+              <a href={links.website} target="_blank" rel="noopener noreferrer" className="btn btn-soft h-8 px-3.5 text-[12px]">
+                <Globe size={13} /> Website
+              </a>
+            )}
+            {links.twitter && (
+              <a href={links.twitter} target="_blank" rel="noopener noreferrer" className="btn btn-soft h-8 px-3.5 text-[12px]">
+                <Twitter size={13} /> Twitter
+              </a>
+            )}
+            {links.telegram && (
+              <a href={links.telegram} target="_blank" rel="noopener noreferrer" className="btn btn-soft h-8 px-3.5 text-[12px]">
+                <MessageCircle size={13} /> Telegram
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RightTabbedWidget({
+  launch,
+  tokenAddress,
+  refetch,
+  fairLaunchMarketCap,
+  targetCapUSD,
+}: {
+  launch: any;
+  tokenAddress: string;
+  refetch: () => void;
+  fairLaunchMarketCap: number;
+  targetCapUSD: number;
+}) {
+  const [activeTab, setActiveTab] = useState<'trade' | 'info' | 'transactions'>('trade');
+
+  return (
+    <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)] flex flex-col h-full">
+      {/* Segmented Tab Headers: Trade (Default), Info, Transactions */}
+      <div className="flex bg-white/[0.04] p-1.5 rounded-2xl border border-white/[0.08] mb-5">
+        <button
+          onClick={() => setActiveTab('trade')}
+          className={`flex-1 py-2 rounded-xl text-[13px] font-extrabold transition-all cursor-pointer ${
+            activeTab === 'trade'
+              ? 'bg-[#5865F2] text-white shadow-[0_2px_12px_rgba(88,101,242,0.4)]'
+              : 'text-white/50 hover:text-white'
+          }`}
+        >
+          Trade
+        </button>
+        <button
+          onClick={() => setActiveTab('info')}
+          className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
+            activeTab === 'info'
+              ? 'bg-[#5865F2] text-white shadow-[0_2px_12px_rgba(88,101,242,0.4)]'
+              : 'text-white/50 hover:text-white'
+          }`}
+        >
+          Info
+        </button>
+        <button
+          onClick={() => setActiveTab('transactions')}
+          className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
+            activeTab === 'transactions'
+              ? 'bg-[#5865F2] text-white shadow-[0_2px_12px_rgba(88,101,242,0.4)]'
+              : 'text-white/50 hover:text-white'
+          }`}
+        >
+          Transactions
+        </button>
+      </div>
+
+      {/* Tab Contents */}
+      {activeTab === 'trade' && (
+        <TradeWidget launch={launch} tokenAddress={tokenAddress} refetchLaunch={refetch} />
+      )}
+
+      {activeTab === 'info' && (
+        <TokenInfoCard launch={launch} marketCap={fairLaunchMarketCap} fdv={targetCapUSD} />
+      )}
+
+      {activeTab === 'transactions' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <span className="text-[13px] font-extrabold text-white">Trade Tape</span>
+            <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.1em]">
+              {(launch.buys || []).length} trades
+            </span>
+          </div>
+
+          {(launch.buys || []).length === 0 ? (
+            <p className="py-12 text-center text-white/40 text-[13px]">No trades yet — be the first.</p>
+          ) : (
+            <div className="divide-y divide-white/[0.06] max-h-[460px] overflow-y-auto pr-1">
+              {(launch.buys || []).map((b: any) => (
+                <a
+                  key={b.id}
+                  href={explorerTx(b.transactionHash)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between py-3 hover:bg-white/[0.03] px-2 rounded-xl transition-colors"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[12px] font-medium text-white/60 font-mono">
+                      {shortAddress(b.buyer, 4)}
+                    </span>
+                    <span className="text-[11px] font-medium text-white/30">
+                      {timeAgo(Number(b.timestamp))}
+                    </span>
+                  </div>
+                  <div className="text-right flex flex-col gap-0.5">
+                    <span className="text-[13px] font-bold text-white tabular-nums">
+                      {fmtToken(b.tokensOut)} <span className="text-white/35 font-medium">{launch.symbol}</span>
+                    </span>
+                    <span className="text-[12px] font-bold text-[#5865F2] tabular-nums">
+                      {fmtNative(b.nativeIn)} <span className="text-white/35 font-medium">{CONTRACTS.nativeTokenSymbol}</span>
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1089,7 +1485,7 @@ export default function TokenDetail() {
           </div>
 
           {/* Main grid skeleton */}
-          <div className="grid lg:grid-cols-[1.55fr_1fr] gap-5 items-start">
+          <div className="grid lg:grid-cols-2 gap-5 items-stretch">
             {/* Left col */}
             <div className="space-y-5">
               <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] flex flex-col gap-4 min-h-[200px]">
@@ -1271,147 +1667,23 @@ export default function TokenDetail() {
               <StatPill label="Buys" value={String(launch.buyCount)} hint="Fair launch trades" />
             </div>
 
-            <div className="grid lg:grid-cols-[1.55fr_1fr] gap-5 items-start">
-              {/* Left column: Bonding curve & Trade tape */}
-              <div className="space-y-5">
-                <div className="bg-[#121624] rounded-[28px] p-5 md:p-6 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-                  {launch.isScheduled && (
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 shadow-md">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
-                          <Clock size={20} className="text-amber-400" />
-                        </div>
-                        <div>
-                          <p className="text-[14px] font-extrabold text-amber-300">Fair Launch Starts Soon</p>
-                          <p className="text-[12px] font-medium text-amber-200/70 mt-0.5">
-                            Buying opens on {new Date(Number(launch.fairLaunchStartsAt) * 1000).toLocaleString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="self-start sm:self-auto px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/30 text-[14px] font-extrabold text-amber-300 tabular-nums">
-                        Starts in {countdown(Number(launch.fairLaunchStartsAt))}
-                      </span>
-                    </div>
-                  )}
+            {/* Main Layout: Left Price Chart vs Right Side Tabs (Trade, Info, Transactions) */}
+            <div className="grid lg:grid-cols-2 gap-5 items-stretch">
+              {/* LEFT SIDE: Price Chart & Bonding Curve Card */}
+              <FairLaunchPriceChart
+                launch={launch}
+                currentPrice={fairLaunchPrice}
+                pct={pct}
+              />
 
-                  <div className="flex items-baseline justify-between mb-3">
-                    <span className="text-[13px] font-bold text-white/50">Curve filled</span>
-                    <span className="text-[15px] font-extrabold text-[#5865F2] tabular-nums">
-                      {pct.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className={`meter ${launch.isLive ? 'meter-live' : ''}`}>
-                    <span style={{ width: `${Math.min(Math.max(pct, 1), 100)}%` }} />
-                  </div>
-
-                  {launch.description && (
-                    <p className="text-white/60 text-[14px] leading-relaxed mt-5 pt-5 border-t border-white/[0.08]">
-                      {launch.description}
-                    </p>
-                  )}
-
-                  {(links.website || links.twitter || links.telegram) && (
-                    <div className="flex flex-wrap items-center gap-2 mt-4">
-                      {links.website && (
-                        <a
-                          href={links.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-soft h-9 px-4 text-[12px]"
-                        >
-                          <Globe size={13} />
-                          Website
-                        </a>
-                      )}
-                      {links.twitter && (
-                        <a
-                          href={links.twitter}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-soft h-9 px-4 text-[12px]"
-                        >
-                          <Twitter size={13} />
-                          Twitter
-                        </a>
-                      )}
-                      {links.telegram && (
-                        <a
-                          href={links.telegram}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-soft h-9 px-4 text-[12px]"
-                        >
-                          <MessageCircle size={13} />
-                          Telegram
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Trade tape */}
-                <div className="bg-[#121624] rounded-[28px] overflow-hidden border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-                  <div className="px-5 md:px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
-                    <h2 className="text-[15px] font-extrabold text-white">Trade tape</h2>
-                    <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.1em]">
-                      {launch.buys.length} trades
-                    </span>
-                  </div>
-
-                  {launch.buys.length === 0 ? (
-                    <p className="px-6 py-14 text-center text-white/40 text-[14px]">
-                      No buys yet — be the first.
-                    </p>
-                  ) : (
-                    <>
-                      <div className="hidden sm:grid grid-cols-[1fr_1.2fr_1fr_auto] gap-4 px-5 md:px-6 py-2.5 bg-white/[0.02]">
-                        {['Buyer', 'Received', 'Paid', 'Time'].map((h) => (
-                          <span key={h} className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/30">
-                            {h}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="divide-y divide-white/[0.06]">
-                        {launch.buys.map((b) => (
-                          <a
-                            key={b.id}
-                            href={explorerTx(b.transactionHash)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="grid sm:grid-cols-[1fr_1.2fr_1fr_auto] gap-1 sm:gap-4 px-5 md:px-6 py-3 hover:bg-white/[0.03] transition-colors items-baseline"
-                          >
-                            <span className="text-[13px] font-medium text-white/50">
-                              {shortAddress(b.buyer, 4)}
-                            </span>
-                            <span className="text-[13px] font-bold text-white tabular-nums">
-                              {fmtToken(b.tokensOut)}{' '}
-                              <span className="text-white/35 font-medium">{launch.symbol}</span>
-                            </span>
-                            <span className="text-[13px] font-bold text-[#5865F2] tabular-nums">
-                              {fmtNative(b.nativeIn)}{' '}
-                              <span className="text-white/35 font-medium">{CONTRACTS.nativeTokenSymbol}</span>
-                            </span>
-                            <span className="text-[11px] font-medium text-white/30 sm:text-right">
-                              {timeAgo(Number(b.timestamp))}
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Right column: Inline Trade Widget + Info Card */}
-              <div className="space-y-5">
-                <TradeWidget launch={launch} tokenAddress={tokenAddress || ''} refetchLaunch={refetch} />
-                <TokenInfoCard launch={launch} marketCap={fairLaunchMarketCap} fdv={targetCapUSD} />
-              </div>
+              {/* RIGHT SIDE: Tabbed Panel (Trade [default], Info, Transactions) */}
+              <RightTabbedWidget
+                launch={launch}
+                tokenAddress={tokenAddress || ''}
+                refetch={refetch}
+                fairLaunchMarketCap={fairLaunchMarketCap}
+                targetCapUSD={targetCapUSD}
+              />
             </div>
           </>
         )}
