@@ -67,7 +67,7 @@ const formatCurrency = (val: string | number | undefined) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(Number(val));
 };
 
-const formatSmallCurrency = (val: string | number | undefined) => {
+const formatSmallCurrency = (val: string | number | undefined): React.ReactNode => {
   if (val === undefined || val === null || isNaN(Number(val))) return '$0.00';
 
   const num = Number(val);
@@ -91,12 +91,16 @@ const formatSmallCurrency = (val: string | number | undefined) => {
 
   const significantDigits = str.slice(zeroCount, zeroCount + 4).replace(/0+$/, '') || '0';
 
-  // Only use compact zero notation when there are 5 or more leading zeros
-  if (zeroCount >= 5) {
-    return `${sign}$0.0{${zeroCount}}${significantDigits}`;
+  // Use subscript notation when there are 4 or more leading zeros (e.g. $0.0₆25)
+  if (zeroCount >= 4) {
+    return (
+      <span>
+        {sign}$0.0<sub className="text-[0.62em] font-extrabold relative -bottom-[0.05em] mx-[0.5px] select-none text-white/80">{zeroCount}</sub>{significantDigits}
+      </span>
+    );
   }
 
-  // For 1-4 leading zeros, show standard decimal representation
+  // For 1-3 leading zeros, show standard decimal representation
   return `${sign}$0.${'0'.repeat(zeroCount)}${significantDigits}`;
 };
 
