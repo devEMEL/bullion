@@ -1,6 +1,16 @@
 
 Section BidWall
 
+**Bid-wall protection** is Bulion’s automated floor support after a token graduates to Uniswap v4.
+
+Part of each swap’s fees (in **bUSDC**) goes to the BidWall. Once enough fees accumulate, the protocol places a **single-sided bUSDC buy order about 1 tick below the current spot price** — effectively a standing bid under market.
+
+- If sellers dump, they hit that bid first, so sells get absorbed by fee-funded bUSDC instead of freefalling through empty liquidity.
+- As price rises, the wall **repositions** under the new spot.
+- Memecoins bought by the wall go to the creator’s **treasury** (an automatic buyback).
+- Creators can disable/close it; fees then go to the treasury instead.
+
+In short: trading fees fund a moving buy floor under price so dumps face resistance.
 
 ---
 
