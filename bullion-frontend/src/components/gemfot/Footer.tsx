@@ -20,9 +20,8 @@ const COLUMNS: { title: string; links: { label: string; to?: string; href?: stri
   {
     title: 'Community',
     links: [
-      { label: 'X / Twitter', href: 'https://x.com' },
-      { label: 'Discord', href: 'https://discord.gg' },
-      { label: 'GitHub', href: 'https://github.com/devEMEL/gemfot' },
+      { label: 'Telegram', href: 'https://t.me/bulionxyz' },
+      { label: 'X', href: 'https://x.com/bulionxyz' },
     ],
   },
 ];
