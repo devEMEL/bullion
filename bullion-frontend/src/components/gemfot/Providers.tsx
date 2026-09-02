@@ -27,9 +27,9 @@ createAppKit({
   networks: SUPPORTED_CHAINS as any,
   projectId,
   metadata: {
-    name: 'GemFot',
-    description: 'Fair-launch memecoins on Arc',
-    url: 'https://gemfot.xyz',
+    name: 'Bulion',
+    description: 'Fair-launch memecoins on LitVM',
+    url: 'https://www.bulion.xyz/',
     icons: ['https://avatars.githubusercontent.com/u/179229932'],
   },
   themeMode: 'dark',
