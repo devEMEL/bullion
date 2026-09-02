@@ -34,7 +34,7 @@ export default function Footer() {
           <div className="flex flex-col items-start gap-4 md:pr-12">
             <Logo />
             <p className="text-white/50 text-[14px] leading-relaxed max-w-[42ch]">
-              Fair-launch memecoins on Arc. Bonding-curve price discovery, a protective bid wall and
+              Fair-launch memecoins on LitVM. Bonding-curve price discovery, a protective bid wall and
               creator fee streams — all powered by Uniswap v4 hooks.
             </p>
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/35 mt-1">
