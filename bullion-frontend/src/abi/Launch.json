@@ -115,7 +115,7 @@
   },
   {
     "type": "function",
-    "name": "gemfotManager",
+    "name": "bulionManager",
     "inputs": [],
     "outputs": [
       {
@@ -160,7 +160,7 @@
         "internalType": "string"
       },
       {
-        "name": "_gemfotManager",
+        "name": "_bulionManager",
         "type": "address",
         "internalType": "contract GemFotManager"
       },

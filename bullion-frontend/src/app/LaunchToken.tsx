@@ -224,7 +224,7 @@ export default function LaunchToken() {
   }, [form.preminePercent, form.fairLaunchPercent, form.totalSupply]);
 
   // Native token the creator pays for their premine: curve cost from position
-  // zero plus the fair-launch swap fee, mirroring GemFotManager.buyFairLaunch.
+  // zero plus the fair-launch swap fee, mirroring BulionManager.buyFairLaunch.
   const premineCostNative = useMemo(() => {
     if (premineWei === null) return null;
     try {
@@ -676,7 +676,7 @@ export default function LaunchToken() {
             </div>
 
             <p className="text-[12px] text-white/40 leading-relaxed">
-              By proceeding, you will approve GemFotManager to spend 10 bUSDC and trigger token
+              By proceeding, you will approve BulionManager to spend 10 bUSDC and trigger token
               deployment.
             </p>
 

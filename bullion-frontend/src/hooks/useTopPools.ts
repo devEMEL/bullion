@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatUnits } from 'viem';
 import {
-  gemfotQuery,
+  bulionQuery,
   GET_TOP_VOLUME_POOLS,
   GET_TOP_FEES_POOLS,
   GET_LAUNCHES_BY_MEMECOINS,
-} from '@/lib/gemfotQueries';
+} from '@/lib/bulionQueries';
 import { CONTRACTS } from '@/config/networks';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -104,8 +104,8 @@ export function useTopTokens(pollMs = 30_000) {
   const load = useCallback(async () => {
     try {
       const [volData, feeData] = await Promise.all([
-        gemfotQuery<{ pools: RawPool[] }>(GET_TOP_VOLUME_POOLS),
-        gemfotQuery<{ pools: RawPool[] }>(GET_TOP_FEES_POOLS),
+        bulionQuery<{ pools: RawPool[] }>(GET_TOP_VOLUME_POOLS),
+        bulionQuery<{ pools: RawPool[] }>(GET_TOP_FEES_POOLS),
       ]);
 
       // ── Volume tokens ──────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ export function useTopTokens(pollMs = 30_000) {
 
       if (volTokenIds.length > 0) {
         try {
-          const launchData = await gemfotQuery<{
+          const launchData = await bulionQuery<{
             launches: {
               memecoin: string;
               totalSupply?: string;

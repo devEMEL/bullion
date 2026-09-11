@@ -22,7 +22,7 @@ import { CONTRACTS, explorerTx } from '@/config/networks';
 import type { TokenConfig } from '@/config/tokens';
 import { calcExpectedRaise, countdown, fmtNative, fmtToken, progressPct, shortAddress, timeAgo } from '@/lib/format';
 import { quoteFairLaunchBuy } from '@/lib/fairLaunchQuote';
-import { gemfotQuery, GET_POOL_DETAIL } from '@/lib/gemfotQueries';
+import { bulionQuery, GET_POOL_DETAIL } from '@/lib/bulionQueries';
 import Erc20Abi from '@/abi/ERC20.json';
 
 function StatPill({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -229,7 +229,7 @@ function TradeWidget({
       setDexPoolFetchError(null);
       setDexPool(null);
       try {
-        const data = await gemfotQuery<{ pool: any }>(GET_POOL_DETAIL, {
+        const data = await bulionQuery<{ pool: any }>(GET_POOL_DETAIL, {
           id: String(launch.poolId).toLowerCase(),
         });
         if (!cancelled) setDexPool(data.pool);
@@ -567,7 +567,7 @@ function DexPoolAnalytics({
     const fetchPoolDetail = async () => {
       try {
         setLoading(true);
-        const data = await gemfotQuery<{ pool: any }>(GET_POOL_DETAIL, {
+        const data = await bulionQuery<{ pool: any }>(GET_POOL_DETAIL, {
           id: poolId.toLowerCase(),
         });
         setPool(data.pool);

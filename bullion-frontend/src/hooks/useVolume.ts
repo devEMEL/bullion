@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { gemfotQuery, GET_VOLUME } from '@/lib/gemfotQueries';
+import { bulionQuery, GET_VOLUME } from '@/lib/bulionQueries';
 
 interface BuyRow {
   id: string;
@@ -34,7 +34,7 @@ export function useVolume(pollMs = 30_000) {
   const load = useCallback(async () => {
     try {
       const since = Math.floor(Date.now() / 1000) - 86_400;
-      const data = await gemfotQuery<{ allTime: BuyRow[]; recent: BuyRow[] }>(GET_VOLUME, {
+      const data = await bulionQuery<{ allTime: BuyRow[]; recent: BuyRow[] }>(GET_VOLUME, {
         since: String(since),
       });
 
@@ -52,8 +52,8 @@ export function useVolume(pollMs = 30_000) {
 
   const loadDex = useCallback(async () => {
     try {
-      const { GET_GLOBAL_STATS } = await import('@/lib/gemfotQueries');
-      const data = await gemfotQuery<{
+      const { GET_GLOBAL_STATS } = await import('@/lib/bulionQueries');
+      const data = await bulionQuery<{
         poolManagers: { totalVolumeUSD: string; totalFeesUSD: string }[];
         uniswapDayDatas: { date: number; volumeUSD: string; feesUSD: string }[];
       }>(GET_GLOBAL_STATS);

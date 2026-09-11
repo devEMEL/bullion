@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import Providers from '@/components/gemfot/Providers';
-import Header from '@/components/gemfot/Header';
-import Footer from '@/components/gemfot/Footer';
+import Providers from '@/components/bulion/Providers';
+import Header from '@/components/bulion/Header';
+import Footer from '@/components/bulion/Footer';
 import Explore from '@/app/Explore';
 import LaunchToken from '@/app/LaunchToken';
 import TokenDetail from '@/app/TokenDetail';

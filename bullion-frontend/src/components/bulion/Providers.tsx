@@ -38,7 +38,7 @@ createAppKit({
   },
 });
 
-export default function GemFotProviders({ children }: { children: React.ReactNode }) {
+export default function BulionProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   if (!projectId) {

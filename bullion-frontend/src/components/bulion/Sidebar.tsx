@@ -100,7 +100,7 @@ export default function Sidebar({
           </div>
 
           <a
-            href={`${activeNetwork.explorerUrl}/address/${activeNetwork.contracts.gemfotManager}`}
+            href={`${activeNetwork.explorerUrl}/address/${activeNetwork.contracts.bulionManager}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between text-xs text-white/40 hover:text-primary transition-colors pt-2 border-t border-white/[0.05]"

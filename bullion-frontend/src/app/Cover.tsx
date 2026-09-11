@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { LogoMark } from '@/components/gemfot/Logo';
+import { LogoMark } from '@/components/bulion/Logo';
 
 export default function Cover() {
   const bannerRef = useRef<HTMLDivElement>(null);

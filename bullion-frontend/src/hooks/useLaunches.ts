@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  gemfotQuery,
+  bulionQuery,
   GET_LAUNCHES,
   type SubgraphLaunch,
-} from '@/lib/gemfotQueries';
+} from '@/lib/bulionQueries';
 import { ipfsToHttp } from '@/lib/pinata';
 
 export interface LaunchMeta {
@@ -48,7 +48,7 @@ export function useLaunches(options: { first?: number; pollMs?: number } = {}) {
     async (silent = false) => {
       if (!silent) setLoading(true);
       try {
-        const data = await gemfotQuery<{ launches: SubgraphLaunch[] }>(GET_LAUNCHES, {
+        const data = await bulionQuery<{ launches: SubgraphLaunch[] }>(GET_LAUNCHES, {
           first,
           skip: 0,
           orderBy: 'createdAtTimestamp',

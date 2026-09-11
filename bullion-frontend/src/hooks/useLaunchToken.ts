@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useAccount, usePublicClient, useWriteContract } from 'wagmi';
 import { parseUnits, parseEventLogs } from 'viem';
 import { CONTRACTS } from '@/config/networks';
-import GemFotManagerAbi from '@/abi/GemFotManager.json';
+import BulionManagerAbi from '@/abi/BulionManager.json';
 import { nativeInForTokens } from '@/lib/fairLaunchQuote';
 import { uploadTokenMetadata } from '@/lib/pinata';
 
@@ -118,7 +118,7 @@ export function useLaunchToken() {
           );
         }
 
-        // Matches GemFotManager.LaunchParams
+        // Matches BulionManager.LaunchParams
         const params = {
           name: values.name.trim(),
           symbol: values.symbol.trim().toUpperCase(),
@@ -139,8 +139,8 @@ export function useLaunchToken() {
         let launchFee = 0n;
         try {
           launchFee = (await publicClient.readContract({
-            address: CONTRACTS.gemfotManager,
-            abi: GemFotManagerAbi as any,
+            address: CONTRACTS.bulionManager,
+            abi: BulionManagerAbi as any,
             functionName: 'getLaunchingFee',
           })) as bigint;
         } catch {
@@ -187,7 +187,7 @@ export function useLaunchToken() {
               },
             ],
             functionName: 'allowance',
-            args: [address, CONTRACTS.gemfotManager],
+            args: [address, CONTRACTS.bulionManager],
           })) as bigint;
 
           if (currentAllowance < totalUSDCNeeded) {
@@ -207,7 +207,7 @@ export function useLaunchToken() {
                 },
               ],
               functionName: 'approve',
-              args: [CONTRACTS.gemfotManager, totalUSDCNeeded],
+              args: [CONTRACTS.bulionManager, totalUSDCNeeded],
               ...gasFees,
             });
 
@@ -216,7 +216,7 @@ export function useLaunchToken() {
         }
 
         /* ---------------------------------------- 4. Send launch tx -- */
-        console.log('GemFot Launch Parameters:', {
+        console.log('Bulion Launch Parameters:', {
           formValues: values,
           contractParams: {
             ...params,
@@ -236,8 +236,8 @@ export function useLaunchToken() {
         // Pre-flight simulation & gas estimation
         try {
           const estimatedGas = await publicClient.estimateContractGas({
-            address: CONTRACTS.gemfotManager,
-            abi: (GemFotManagerAbi as any).abi || GemFotManagerAbi,
+            address: CONTRACTS.bulionManager,
+            abi: (BulionManagerAbi as any).abi || BulionManagerAbi,
             functionName: 'launch',
             args: [params],
             account: address,
@@ -248,16 +248,16 @@ export function useLaunchToken() {
         }
 
         await publicClient.simulateContract({
-          address: CONTRACTS.gemfotManager,
-          abi: (GemFotManagerAbi as any).abi || GemFotManagerAbi,
+          address: CONTRACTS.bulionManager,
+          abi: (BulionManagerAbi as any).abi || BulionManagerAbi,
           functionName: 'launch',
           args: [params],
           account: address,
         });
 
         const txHash = await writeContractAsync({
-          address: CONTRACTS.gemfotManager,
-          abi: (GemFotManagerAbi as any).abi || GemFotManagerAbi,
+          address: CONTRACTS.bulionManager,
+          abi: (BulionManagerAbi as any).abi || BulionManagerAbi,
           functionName: 'launch',
           args: [params],
           ...gasFees,
@@ -271,7 +271,7 @@ export function useLaunchToken() {
         }
 
         const logs = parseEventLogs({
-          abi: GemFotManagerAbi as any,
+          abi: BulionManagerAbi as any,
           logs: receipt.logs,
           eventName: 'PoolCreated',
         }) as any[];

@@ -13,7 +13,7 @@ const COLUMNS: { title: string; links: { label: string; to?: string; href?: stri
       { label: 'Token Transfer', to: '/transfer' },
       {
         label: 'Contracts',
-        href: `${activeNetwork.explorerUrl}/address/${activeNetwork.contracts.gemfotManager}`,
+        href: `${activeNetwork.explorerUrl}/address/${activeNetwork.contracts.bulionManager}`,
       },
     ],
   },

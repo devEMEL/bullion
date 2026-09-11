@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { gemfotQuery, type SubgraphLaunch } from '@/lib/gemfotQueries';
+import { bulionQuery, type SubgraphLaunch } from '@/lib/bulionQueries';
 import { ipfsToHttp } from '@/lib/pinata';
 
 export interface LaunchBuy {
@@ -88,7 +88,7 @@ export function useLaunch(memecoin?: string, pollMs = 12_000) {
       if (!memecoin) return;
       if (!silent) setLoading(true);
       try {
-        const data = await gemfotQuery<{ launches: any[] }>(GET_LAUNCH_BY_TOKEN, {
+        const data = await bulionQuery<{ launches: any[] }>(GET_LAUNCH_BY_TOKEN, {
           memecoin: memecoin.toLowerCase(),
         });
         const raw = data.launches?.[0];

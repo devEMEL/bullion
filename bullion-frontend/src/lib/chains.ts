@@ -1,6 +1,6 @@
 import { defineChain } from '@reown/appkit/networks';
 
-export const liteforgeTestnet = defineChain({
+export const arcTestnet = defineChain({
   id: 4441,
   caipNetworkId: 'eip155:4441',
   chainNamespace: 'eip155',
@@ -25,5 +25,4 @@ export const liteforgeTestnet = defineChain({
   },
 });
 
-export const arcTestnet = liteforgeTestnet;
 

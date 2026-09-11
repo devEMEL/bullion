@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useAccount, usePublicClient, useWriteContract } from 'wagmi';
 import { maxUint256, parseUnits } from 'viem';
 import { CONTRACTS } from '@/config/networks';
-import GemFotManagerAbi from '@/abi/GemFotManager.json';
+import BulionManagerAbi from '@/abi/BulionManager.json';
 import PoolSwapAbi from '@/abi/PoolSwap.json';
 import Erc20Abi from '@/abi/ERC20.json';
 
@@ -61,8 +61,8 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
 
       try {
         const poolKey = (await publicClient.readContract({
-          address: CONTRACTS.gemfotManager,
-          abi: (GemFotManagerAbi as any).abi || GemFotManagerAbi,
+          address: CONTRACTS.bulionManager,
+          abi: (BulionManagerAbi as any).abi || BulionManagerAbi,
           functionName: 'poolKey',
           args: [memecoin as `0x${string}`],
         })) as PoolKeyStruct;
@@ -78,7 +78,7 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
         // zeroForOne is true when we sell currency0 for currency1
         const zeroForOne = poolKey.currency0.toLowerCase() === tokenIn;
 
-        const gemfotManagerAbiArray = (GemFotManagerAbi as any).abi || GemFotManagerAbi;
+        const bulionManagerAbiArray = (BulionManagerAbi as any).abi || BulionManagerAbi;
         const erc20AbiArray = (Erc20Abi as any).abi || Erc20Abi;
 
         // Fetch gas fee parameters with 25% safety buffer for network base fee spikes
@@ -105,7 +105,7 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
             address: tokenIn,
             abi: erc20AbiArray,
             functionName: 'allowance',
-            args: [address, CONTRACTS.gemfotManager],
+            args: [address, CONTRACTS.bulionManager],
           })) as bigint;
 
           if (allowance < approvalAmount) {
@@ -114,7 +114,7 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
               address: tokenIn,
               abi: erc20AbiArray,
               functionName: 'approve',
-              args: [CONTRACTS.gemfotManager, approvalAmount],
+              args: [CONTRACTS.bulionManager, approvalAmount],
               ...gasFees,
             });
             await publicClient.waitForTransactionReceipt({ hash: approveHash });
@@ -123,15 +123,15 @@ export function useSwap(memecoin?: string, isGraduated?: boolean) {
           setStep('signing');
           // Validate the transaction before asking the wallet to broadcast it.
           await publicClient.simulateContract({
-            address: CONTRACTS.gemfotManager,
-            abi: gemfotManagerAbiArray,
+            address: CONTRACTS.bulionManager,
+            abi: bulionManagerAbiArray,
             functionName: 'buyFairLaunch',
             args: [poolKey, amountIn],
             account: address,
           });
           const hash = await writeContractAsync({
-            address: CONTRACTS.gemfotManager,
-            abi: gemfotManagerAbiArray,
+            address: CONTRACTS.bulionManager,
+            abi: bulionManagerAbiArray,
             functionName: 'buyFairLaunch',
             args: [poolKey, amountIn],
             ...gasFees,

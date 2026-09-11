@@ -1,12 +1,12 @@
 import { activeNetwork } from '@/config/networks';
 
-export const GEMFOT_SUBGRAPH_URL = activeNetwork.subgraphUrl;
+export const BULION_SUBGRAPH_URL = activeNetwork.subgraphUrl;
 
-export async function gemfotQuery<T>(
+export async function bulionQuery<T>(
   query: string,
   variables: Record<string, any> = {}
 ): Promise<T> {
-  const res = await fetch(GEMFOT_SUBGRAPH_URL, {
+  const res = await fetch(BULION_SUBGRAPH_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, variables }),
@@ -14,7 +14,7 @@ export async function gemfotQuery<T>(
 
   const { data, errors } = await res.json();
   if (errors?.length) {
-    console.error('GemFot subgraph errors:', errors);
+    console.error('Bulion subgraph errors:', errors);
     throw new Error(errors[0]?.message ?? 'Subgraph query failed');
   }
   return data as T;

@@ -1,15 +1,14 @@
-import { defineChain } from '@reown/appkit/networks';
 import { arcTestnet } from '@/lib/chains';
 
 /**
- * GemFot network registry.
+ * Bulion network registry.
  *
  * Only `arc_testnet` is supported for now. To add another chain later, append a
  * new entry to `NETWORKS` with the same shape and (optionally) flip
  * `DEFAULT_NETWORK_KEY`.
  */
 
-export interface GemFotContracts {
+export interface BulionContracts {
   /** The native/quote token of every launch pool (USDC on Arc). */
   nativeToken: `0x${string}`;
   nativeTokenSymbol: string;
@@ -21,8 +20,8 @@ export interface GemFotContracts {
   stateView: `0x${string}`;
   permit2: `0x${string}`;
 
-  /** GemFot protocol */
-  gemfotManager: `0x${string}`;
+  /** Bulion protocol */
+  bulionManager: `0x${string}`;
   launch: `0x${string}`;
   fairLaunch: `0x${string}`;
   bidWall: `0x${string}`;
@@ -38,7 +37,7 @@ export interface GemFotContracts {
   poolSwap: `0x${string}`;
 }
 
-export interface GemFotNetwork {
+export interface BulionNetwork {
   key: string;
   /** Human label shown in the UI */
   label: string;
@@ -48,9 +47,9 @@ export interface GemFotNetwork {
   subgraphUrl: string;
   explorerUrl: string;
   rpcUrls: string[];
-  /** Block the GemFotManager hook was deployed at (subgraph startBlock) */
+  /** Block the BulionManager hook was deployed at (subgraph startBlock) */
   startBlock: number;
-  contracts: GemFotContracts;
+  contracts: BulionContracts;
 }
 
 
@@ -62,7 +61,7 @@ export const NETWORKS = {
     chainId: 4441,
     subgraphNetwork: 'liteforge-testnet',
     subgraphUrl:
-      import.meta.env.VITE_GEMFOT_SUBGRAPH_URL ||
+      import.meta.env.VITE_BULION_SUBGRAPH_URL ||
       'https://api.goldsky.com/api/public/project_cmsysqw4m0s6q01tf52of958s/subgraphs/bullion-subgraph/1.0.0/gn',
     explorerUrl: 'https://liteforge.explorer.caldera.xyz',
     rpcUrls: [
@@ -79,7 +78,7 @@ export const NETWORKS = {
       stateView: '0x2D21B11f49065C6220db8316C9c151f2f5C2b1A7',
       permit2: '0x496C2CF27577473a4e44b3E995dDf46D643482bF',
 
-      gemfotManager: '0x3B4D3ec4508e79115b7D9c94E72e970dCf5d2FDC',
+      bulionManager: '0x3B4D3ec4508e79115b7D9c94E72e970dCf5d2FDC',
       launch: '0xDcbb86a7d05360Dc454203ec1D1A7741669311D8',
       fairLaunch: '0x5Bd9a64a124a7ec0b64b3E19Bc1F70b894B1Fb12',
       bidWall: '0x5624D42dFd4ad454E88278991D67601Ba16E6fa6',
@@ -95,13 +94,13 @@ export const NETWORKS = {
       poolSwap: '0xA35125717a9B3589752695F12a5927E751E8fCa1',
     },
   },
-} satisfies Record<string, GemFotNetwork>;
+} satisfies Record<string, BulionNetwork>;
 
 export type NetworkKey = keyof typeof NETWORKS;
 
 export const DEFAULT_NETWORK_KEY: NetworkKey = 'arc_testnet';
 
-export const activeNetwork: GemFotNetwork = NETWORKS[DEFAULT_NETWORK_KEY];
+export const activeNetwork: BulionNetwork = NETWORKS[DEFAULT_NETWORK_KEY];
 
 export const CONTRACTS = activeNetwork.contracts;
 

@@ -3,7 +3,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "GemFot Sans", "Figtree", ui-sans-serif, sans-serif;
+  --font-sans: "Bulion Sans", "Figtree", ui-sans-serif, sans-serif;
   --font-mono: "Figtree", ui-sans-serif, sans-serif;
   --font-display: "Figtree", "Figtree", ui-sans-serif, sans-serif;
   --font-Figtree: "Figtree", ui-sans-serif, sans-serif;
@@ -69,7 +69,7 @@
 
 /* Digits & numeric punctuation → Figtree; everything else → Figtree */
 @font-face {
-  font-family: "GemFot Sans";
+  font-family: "Bulion Sans";
   font-style: normal;
   font-weight: 300 900;
   font-display: swap;
@@ -79,7 +79,7 @@
 }
 
 @font-face {
-  font-family: "GemFot Sans";
+  font-family: "Bulion Sans";
   font-style: normal;
   font-weight: 300 900;
   font-display: swap;
@@ -91,7 +91,7 @@ body,
 #root {
   background-color: #070910;
   color: #f1f3f9;
-  font-family: "GemFot Sans", "Figtree", ui-sans-serif, sans-serif;
+  font-family: "Bulion Sans", "Figtree", ui-sans-serif, sans-serif;
   font-size: 16px;
   font-weight: 500;
   font-variant-numeric: lining-nums tabular-nums;

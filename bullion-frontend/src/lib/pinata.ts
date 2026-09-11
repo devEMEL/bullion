@@ -59,7 +59,7 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
   form.append('file', file);
   form.append(
     'pinataMetadata',
-    JSON.stringify({ name: `gemfot-${Date.now()}-${file.name}` })
+    JSON.stringify({ name: `bulion-${Date.now()}-${file.name}` })
   );
   form.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
 
@@ -71,7 +71,7 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
 export async function uploadMetadataToIPFS(metadata: TokenMetadata): Promise<string> {
   const body = JSON.stringify({
     pinataContent: metadata,
-    pinataMetadata: { name: `gemfot-${metadata.symbol}-metadata.json` },
+    pinataMetadata: { name: `bulion-${metadata.symbol}-metadata.json` },
     pinataOptions: { cidVersion: 1 },
   });
 

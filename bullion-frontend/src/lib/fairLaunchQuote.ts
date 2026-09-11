@@ -5,7 +5,7 @@
  *
  * All arithmetic mirrors the Solidity integer math (floor division, floor sqrt)
  * using BigInt, so the quote is bit-for-bit identical to what
- * `GemFotManager.buyFairLaunch` computes for the same inputs.
+ * `BulionManager.buyFairLaunch` computes for the same inputs.
  */
 
 const ONE_E_18 = 10n ** 18n;
@@ -82,7 +82,7 @@ export function calculateBuyAmount(
  * or below `tokensWanted` tokens (e.g. a creator premine bought right after
  * launch).
  *
- * Staying at-or-below matters because `GemFotManager.buyFairLaunch` reverts
+ * Staying at-or-below matters because `BulionManager.buyFairLaunch` reverts
  * with "Exceeds premine allocation" when the curve output overshoots the
  * stored premine amount. Rather than analytically inverting the curve
  * (fragile with Solidity floor math), this binary-searches
