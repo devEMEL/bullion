@@ -37,7 +37,7 @@ export default function FaucetPage() {
     setToast(prev => ({ ...prev, show: false }));
   };
 
-  // Multicall all faucet and token data in a single RPC request (exactly like mlSwap-frontend)
+  // Multicall all faucet and token data in a single RPC request
   const { data: faucetData, refetch: refetchAllData } = useReadContracts({
     contracts: [
       {
