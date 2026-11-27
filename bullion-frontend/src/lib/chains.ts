@@ -13,14 +13,14 @@ export const arcTestnet = defineChain({
   rpcUrls: {
     default: {
       http: [
-        'https://liteforge.rpc.caldera.xyz/http',
+        'https://rpc.testnet.liteforge.zeeve.net/',
       ],
     },
   },
   blockExplorers: {
     default: {
       name: 'Liteforge Explorer',
-      url: 'https://liteforge.explorer.caldera.xyz',
+      url: 'https://explorer.testnet.liteforge.zeeve.net/api',
     },
   },
 });
