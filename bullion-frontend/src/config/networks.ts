@@ -63,7 +63,7 @@ export const NETWORKS = {
     subgraphUrl:
       import.meta.env.VITE_BULION_SUBGRAPH_URL ||
       'https://api.goldsky.com/api/public/project_cmsysqw4m0s6q01tf52of958s/subgraphs/bullion-subgraph/1.0.0/gn',
-    explorerUrl: 'https://explorer.testnet.liteforge.zeeve.net/api',
+    explorerUrl: 'https://explorer.testnet.liteforge.zeeve.net',
     rpcUrls: [
       'https://rpc.testnet.liteforge.zeeve.net/',
     ],

@@ -20,7 +20,7 @@ export const arcTestnet = defineChain({
   blockExplorers: {
     default: {
       name: 'Liteforge Explorer',
-      url: 'https://explorer.testnet.liteforge.zeeve.net/api',
+      url: 'https://explorer.testnet.liteforge.zeeve.net',
     },
   },
 });
